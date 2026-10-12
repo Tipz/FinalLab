@@ -1,10 +1,10 @@
 # Интеграции и CI/CD — домашнее задание № 6
 
 Статус документа: актуальное состояние проекта.
-Последнее обновление: 23 сентября 2026 года.
+Последнее обновление: 12 октября 2026 года. Датированные результаты сентября относятся к версии ДЗ № 6 до бюджетного дополнения.
 
 Принятые решения и последовательность работ зафиксированы в
-[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md); детали интеграций приведены
+[историческом журнале](history/README.md); детали интеграций приведены
 ниже.
 
 ## 1. Исходное состояние
@@ -13,7 +13,7 @@
 PostgreSQL. Клиент публикуется в `wwwroot` API, а аутентификация выполняется через
 ASP.NET Core Identity cookie.
 
-До начала ДЗ № 6 в репозитории присутствуют:
+До начала ДЗ № 6 в репозитории присутствовали:
 
 - CI с Release build и двумя xUnit-проектами;
 - Compose/Chromium backend smoke;
@@ -44,15 +44,15 @@ antiforgery, JSON-логи и единый CI/publish pipeline. Учебный p
 
 | Workflow | Фактическая функция | Ограничение |
 | --- | --- | --- |
-| `.github/workflows/ci.yml` | Format/NuGet audit → build/xUnit → CodeQL → Compose/Chromium → publish digest → smoke опубликованного образа | [Успешный run](https://github.com/Tipz/HT6/actions/runs/35828731866) |
+| `.github/workflows/ci.yml` | Format/NuGet audit → build/xUnit → Compose/Chromium → publish digest → smoke опубликованного образа; CodeQL параллельно build/xUnit, без блокировки publish | [Успешный run](https://github.com/Tipz/HT6/actions/runs/35828731866) |
 
-### Целевая последовательность
+### Последовательность обязательных этапов
 
 ```text
 format/security → build/tests → backend smoke → publish → published-image smoke
 ```
 
-Pull request выполняет только проверки. Push в `main` после успешных проверок
+CodeQL зависит от `quality`, запускается параллельно `build_test` и имеет `continue-on-error: true`. Он не является обязательным gate публикации. Pull request выполняет только проверки. Push в `main` после успешных проверок
 публикует immutable image. Production обновляется вручную через
 `docker-compose.deploy.yml`.
 
@@ -88,8 +88,8 @@ Compose default публикует порт на `127.0.0.1`, а текущий 
 
 При переносе в другое окружение необходимо определить:
 
-- схему и порт production URL на `192.168.1.26`;
-- TLS/reverse proxy либо явно зафиксированный режим изолированного LAN-стенда;
+- собственный production URL целевого сервера;
+- HTTPS reverse proxy и доверенный сертификат;
 - каталог Compose и доступ оператора к нему;
 - доступ Docker host к `ghcr.io/tipz/ht6`, если package является приватным;
 - backup и rollback procedure.
@@ -128,7 +128,7 @@ Client Secret приложение запускается с password login, а 
 HTTPS-стенде. Для другого окружения требуется собственное OAuth-приложение и
 Redirect URI `<APP_URL>/signin-yandex`.
 
-### Планируемый провайдер
+### Реализованный провайдер
 
 Яндекс ID OAuth 2.0 через стандартный ASP.NET Core OAuth handler. Backend
 выполняет authorization code flow, обменивает code на token и отдельно получает

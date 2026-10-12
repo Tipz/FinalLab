@@ -169,7 +169,7 @@ Findings сопоставлены с кодом; исправления подт
 ### SA-09 — Отсутствует автоматический vulnerability/SAST gate
 
 - **Предварительная severity:** Medium.
-- **Статус:** NuGet gate и CodeQL closed; Dependency Review требует PR.
+- **Статус:** NuGet gate реализован; CodeQL запускается без блокировки publish (`continue-on-error: true`, отдельная ветка после `quality`). Обязательный SAST gate не реализован; Dependency Review требует PR.
 - **Компоненты:** GitHub Actions и repository settings.
 - **Наблюдение:** build может обнаружить часть NuGet audit warnings, но отдельного
   отчёта транзитивных уязвимостей, dependency review и CodeQL нет.

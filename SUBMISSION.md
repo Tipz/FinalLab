@@ -5,13 +5,13 @@ Identity, EF Core/Npgsql и PostgreSQL. В ДЗ № 6 добавлены CI/CD, 
 hardening, OAuth 2.0 через Яндекс ID, Яндекс Метрика с согласием, health checks и
 JSON-логирование.
 
-Актуальное состояние зафиксировано 23 сентября 2026 года.
+Состояние сдачи ДЗ № 6 зафиксировано 23 сентября 2026 года. Более позднее бюджетное дополнение от 12.10.2026 описано в [budget_planning.md](docs/budget_planning.md); результаты сдачи ниже не подтверждают его production-выпуск.
 
 ## Состав сдачи
 
 | Требование | Реализация |
 | --- | --- |
-| CI/CD | `.github/workflows/ci.yml`: format/audit → build/tests → CodeQL → backend smoke → multi-platform publish → smoke опубликованного digest |
+| CI/CD | `.github/workflows/ci.yml`: format/audit → build/tests → backend smoke → multi-platform publish → smoke опубликованного digest; CodeQL параллельно build/tests и не блокирует publish |
 | Container | `ghcr.io/tipz/ht6` для `linux/amd64` и `linux/arm64` |
 | Deployment | Ручной запуск `docker-compose.deploy.yml` по immutable digest; отдельный `migrate`, persistent PostgreSQL и Data Protection |
 | OAuth 2.0 | Backend Authorization Code Flow с PKCE через Яндекс ID; вход по паролю сохранён |

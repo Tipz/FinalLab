@@ -227,16 +227,18 @@ GitHub Actions Publish container image             — GHCR, AMD64/ARM64, усп
 создание варианта с расходами `0` и `null`, конфликт revision, изоляция владельцев,
 выход и сохранение данных после перезагрузки страницы.
 
-Для ДЗ № 6 локально прошли 36 Core/UI- и 15 API-тестов. На текущем коммите
+Для ДЗ № 6 20 сентября 2026 года локально прошли 36 Core/UI- и 15 API-тестов. Для версии от 23 сентября 2026 года
 [GitHub Actions run](https://github.com/Tipz/HT6/actions/runs/35828731866)
 успешно выполнил format/NuGet audit, Release build, оба xUnit-проекта, CodeQL,
 Compose/PostgreSQL/Chromium smoke, AMD64/ARM64 publish и smoke опубликованного
 digest. Владелец подтвердил HTTPS, Яндекс ID и Метрику на локальном стенде за
 существующим Traefik и локальной PKI.
 
+Бюджетное дополнение от 12.10.2026: локально зафиксированы 58 Core/UI- и 24 API-теста, миграция PostgreSQL и расширенный backend smoke. Команды, evidence и ограничения — в [budget_planning.md](docs/budget_planning.md). Эти результаты не подтверждают публикацию контейнера или production-выпуск дополнения.
+
 ## Автоматизация GitHub
 
-Актуальный workflow поддерживает ручной запуск (`workflow_dispatch`):
+Актуальный workflow поддерживает ручной запуск (`workflow_dispatch`). CodeQL работает параллельно сборке после `quality`, допускает ошибку и не блокирует publish:
 
 | Workflow | Автоматический запуск | Результат |
 | --- | --- | --- |

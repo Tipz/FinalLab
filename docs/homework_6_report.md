@@ -4,6 +4,8 @@
 standalone Blazor WebAssembly, ASP.NET Core Minimal API, ASP.NET Core Identity,
 EF Core и PostgreSQL.
 
+Отчёт фиксирует результаты ДЗ № 6 на 23.09.2026. Более позднее дополнение US-14/US-15 и его локальные проверки описаны в [budget_planning.md](budget_planning.md); его production-выпуск не подтверждён.
+
 ## CI/CD
 
 Для проекта настроен GitHub Actions pipeline, который при изменениях в ветке
@@ -19,6 +21,8 @@ EF Core и PostgreSQL.
 - сборку multi-platform Docker image для `linux/amd64` и `linux/arm64`;
 - публикацию образа в `ghcr.io/tipz/ht6`;
 - smoke-проверку опубликованного образа.
+
+CodeQL запускается параллельно сборке после quality и имеет continue-on-error: true; его ошибка не блокирует публикацию образа.
 
 Механизм автоматического production deployment через защищённый self-hosted
 GitHub Actions runner был реализован. Runner размещался непосредственно на
