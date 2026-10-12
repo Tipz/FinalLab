@@ -1,7 +1,17 @@
 <article class="panel variant-card" aria-label="@Variant.Name">
     <div class="card-top"><span class="place">@Variant.Destination</span><label class="select-variant"><input type="checkbox" checked="@Selected" disabled="@Busy" @onchange="() => Toggle.InvokeAsync(Variant.Id)" />Сравнить</label></div>
     <h3>@Variant.Name</h3><p class="accommodation">@Variant.Accommodation</p>
-    <BudgetView Expenses="Variant.Expenses" NeedsReview="Variant.NeedsBudgetReview" Details />
+    <BudgetView Expenses="Variant.Expenses" NeedsReview="Variant.NeedsBudgetReview" BudgetLimitKopecks="BudgetLimitKopecks" ReservePercent="ReservePercent" ShowAssessment Details />
+    @if (clarifications.Count > 0)
+    {
+        <details class="clarifications">
+            <summary>Что уточнить · @clarifications.Count</summary>
+            <ul>@foreach (var item in clarifications)
+            {
+                <li><span>@item.Message</span><MudButton Color="Color.Primary" OnClick="() => Clarify.InvokeAsync((Variant.Id, item.FieldId))" Disabled="Busy" aria-label="@($"Заполнить: {item.Message}")">Заполнить</MudButton></li>
+            }</ul>
+        </details>
+    }
     <div class="features"><span>Кухня: @Catalog.Amenity(Variant.Kitchen)</span><span>Кроватка: @Catalog.Amenity(Variant.Crib)</span><span>Площадка: @Catalog.Amenity(Variant.Playground)</span></div>
     <p class="road">@(Variant.TravelMinutes is int m ? $"{m / 60} ч {m % 60} мин" : "Время не указано") в одну сторону · пересадок: @(Variant.Transfers?.ToString() ?? "Не указано")</p>
     @if (Variant.DistanceMeters is int d) { <p class="note">@d м · @Variant.DistanceTarget</p> }
@@ -14,15 +24,30 @@
     [Parameter, EditorRequired] public Together.Core.Variant Variant { get; set; } = new();
     [Parameter] public bool Selected { get; set; }
     [Parameter] public bool Busy { get; set; }
+    [Parameter] public long? BudgetLimitKopecks { get; set; }
+    [Parameter] public int ReservePercent { get; set; }
+    [Parameter] public IReadOnlyList<string> SelectedCriteria { get; set; } = Catalog.Criteria;
+    [Parameter] public EventCallback<(Guid VariantId, string FieldId)> Clarify { get; set; }
     [Parameter] public EventCallback<Guid> Toggle { get; set; }
     [Parameter] public EventCallback<Guid> Edit { get; set; }
     [Parameter] public EventCallback<Guid> Delete { get; set; }
+    private IReadOnlyList<VariantClarification> clarifications = [];
     private Together.Core.Variant? previous;
     private bool previousSelected, previousBusy, render = true;
+    private long? previousLimit;
+    private int previousReserve;
+    private string[] previousCriteria = [];
     protected override void OnParametersSet()
     {
-        render = !ReferenceEquals(previous, Variant) || previousSelected != Selected || previousBusy != Busy;
+        var criteriaChanged = !previousCriteria.SequenceEqual(SelectedCriteria);
+        render = !ReferenceEquals(previous, Variant) || previousSelected != Selected || previousBusy != Busy ||
+            previousLimit != BudgetLimitKopecks || previousReserve != ReservePercent || criteriaChanged;
+        if (render)
+            clarifications = VariantClarifications.For(Variant, SelectedCriteria);
         previous = Variant; previousSelected = Selected; previousBusy = Busy;
+        previousLimit = BudgetLimitKopecks; previousReserve = ReservePercent;
+        if (criteriaChanged)
+            previousCriteria = [.. SelectedCriteria];
     }
     protected override bool ShouldRender() => render;
 }

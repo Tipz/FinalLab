@@ -11,7 +11,7 @@ if (args.Contains("--serve-published"))
     return 0;
 }
 var baseUrl = Environment.GetEnvironmentVariable("APP_URL") ?? "http://localhost:5180";
-var evidence = Path.GetFullPath("docs/evidence");
+var evidence = Path.GetFullPath(Environment.GetEnvironmentVariable("BROWSER_EVIDENCE_DIR") ?? "docs/evidence");
 Directory.CreateDirectory(evidence);
 using var playwright = await Playwright.CreateAsync();
 if (args.Contains("--startup"))

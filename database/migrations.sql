@@ -245,3 +245,42 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261012132837_TripBudgetSettings') THEN
+    ALTER TABLE trips ADD "BudgetLimitKopecks" bigint;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261012132837_TripBudgetSettings') THEN
+    ALTER TABLE trips ADD "ReservePercent" integer NOT NULL DEFAULT 0;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261012132837_TripBudgetSettings') THEN
+    ALTER TABLE trips ADD CONSTRAINT ck_trips_budget_limit CHECK ("BudgetLimitKopecks" IS NULL OR "BudgetLimitKopecks" BETWEEN 0 AND 10000000000);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261012132837_TripBudgetSettings') THEN
+    ALTER TABLE trips ADD CONSTRAINT ck_trips_reserve_percent CHECK ("ReservePercent" BETWEEN 0 AND 100);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261012132837_TripBudgetSettings') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20261012132837_TripBudgetSettings', '10.0.10');
+    END IF;
+END $EF$;
+COMMIT;
+

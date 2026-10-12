@@ -15,6 +15,7 @@ public static class DataValidation
         {
             if (t.Id == Guid.Empty || !Text(t.Name, 100) || t.StartDate == default || t.EndDate <= t.StartDate || t.Adults is < 1 or > 10 ||
                 t.ChildAges is null || t.ChildAges.Length is < 1 or > 10 || t.ChildAges.Any(x => x is < 0 or > 17) ||
+                t.BudgetLimitKopecks is < 0 or > 10000000000L || t.ReservePercent is < 0 or > 100 ||
                 t.Revision < 0 || t.CreatedAt == default || t.UpdatedAt < t.CreatedAt || t.Variants is null || t.SelectedVariantIds is null || t.SelectedCriteria is null)
                 return false;
             foreach (var v in t.Variants)

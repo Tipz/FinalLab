@@ -19,8 +19,8 @@
                 var index = i;
                 <Field Id="@($"expense-{i}")" Label="@Catalog.ExpenseLabels[i]" InputMode="decimal" @bind-Value="draft.Expenses[index]" Error="@Error($"expense-{i}")" />
             }</div>
-            <div class="budget-preview" aria-live="polite"><span>Сумма корректно заполненных статей</span><BudgetView Expenses="draft.ParsedExpenses()" /></div>
-            @if (Original?.NeedsBudgetReview == true) { <label class="check-row"><input type="checkbox" @bind="draft.BudgetReviewed" />Расходы проверены</label> }
+            <div class="budget-preview" aria-live="polite"><span>Сумма корректно заполненных статей</span><BudgetView Expenses="draft.ParsedExpenses()" BudgetLimitKopecks="BudgetLimitKopecks" ReservePercent="ReservePercent" NeedsReview="@(Original?.NeedsBudgetReview == true && !draft.BudgetReviewed)" ShowAssessment /></div>
+            @if (Original?.NeedsBudgetReview == true) { <label class="check-row"><input id="budget-reviewed" type="checkbox" @bind="draft.BudgetReviewed" />Расходы проверены</label> }
             <Field Id="notes" Label="Заметки" @bind-Value="draft.Notes" Error="@Error("notes")" Multiline />
         </fieldset>
         @if (errors.Count > 0) { <p role="alert" class="field-error">Исправьте отмеченные поля</p> }
@@ -31,6 +31,9 @@
 @code {
     [Parameter] public Together.Core.Variant? Original { get; set; }
     [Parameter] public bool Busy { get; set; }
+    [Parameter] public long? BudgetLimitKopecks { get; set; }
+    [Parameter] public int ReservePercent { get; set; }
+    [Parameter] public string? InitialFocusField { get; set; }
     [Parameter] public EventCallback<VariantDraft> OnSave { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public RenderFragment? ErrorContent { get; set; }
@@ -44,5 +47,10 @@
     private async Task MarkDirty() => await Js.InvokeVoidAsync("tripUi.setDirty", Snapshot() != initial);
     private async Task Cancel() { if (!Busy && (Snapshot() == initial || await Js.InvokeAsync<bool>("confirm", "Отбросить несохранённые изменения? Отмена — продолжить редактирование."))) await OnClose.InvokeAsync(); }
     private async Task Submit() { errors = draft.Validate(); if (errors.Count > 0) { focusError = true; return; } await OnSave.InvokeAsync(draft); }
-    protected override async Task OnAfterRenderAsync(bool firstRender) { if (focusError) { focusError = false; await Js.InvokeVoidAsync("tripUi.focusError"); } }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && InitialFocusField is not null)
+            await Js.InvokeVoidAsync("tripUi.focusField", InitialFocusField);
+        if (focusError) { focusError = false; await Js.InvokeVoidAsync("tripUi.focusError"); }
+    }
 }

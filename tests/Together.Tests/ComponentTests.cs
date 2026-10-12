@@ -83,4 +83,57 @@ public sealed class ComponentTests : BunitContext
         Assert.Empty(cut.FindAll("script,img"));
         Assert.Contains("<script>alert(1)</script>", cut.Find("h3").TextContent);
     }
+
+    [Fact]
+    public void PartialBudgetShowsKnownCostsWithoutPromisingRemainingMoney()
+    {
+        var cut = Render<BudgetView>(p => p.Add(x => x.Expenses, [9800000, null, 0, 0, 0, 0])
+            .Add(x => x.BudgetLimitKopecks, 15000000).Add(x => x.ReservePercent, 10).Add(x => x.ShowAssessment, true));
+        Assert.Contains("Известные расходы", cut.Markup);
+        Assert.Contains("Итог может превысить лимит", cut.Markup);
+        Assert.DoesNotContain("До лимита осталось", cut.Markup);
+    }
+
+    [Fact]
+    public void ClarificationOpensTheSelectedVariantFieldAndUpdatesWithCriteria()
+    {
+        (Guid VariantId, string FieldId)? target = null;
+        var variant = new Variant { Expenses = [0, 0, 0, 0, 0, 0], Crib = "unknown" };
+        var cut = Render<VariantCard>(p => p.Add(x => x.Variant, variant)
+            .Add(x => x.SelectedCriteria, new[] { "crib" })
+            .Add(x => x.Clarify, value => target = value));
+        cut.Find(".clarifications button").Click();
+        Assert.Equal((variant.Id, "crib"), target);
+        cut.Render(p => p.Add(x => x.SelectedCriteria, Array.Empty<string>()));
+        Assert.Empty(cut.FindAll(".clarifications"));
+    }
+
+    [Fact]
+    public void TripEditorValidatesAndSubmitsBudgetSettings()
+    {
+        TripDraft? saved = null;
+        var cut = Render<TripEditor>(p => p.Add(x => x.Original, ExampleData.Create().Trips.Single())
+            .Add(x => x.OnSave, value => saved = value));
+        cut.Find("#budget-limit").Input("150000");
+        cut.Find("#reserve-percent").Input("101");
+        cut.Find("form").Submit();
+        Assert.Null(saved);
+        Assert.Equal("true", cut.Find("#reserve-percent").GetAttribute("aria-invalid"));
+        cut.Find("#reserve-percent").Input("10");
+        cut.Find("form").Submit();
+        Assert.NotNull(saved);
+        Assert.Equal("150000", saved.BudgetLimit);
+        Assert.Equal("10", saved.ReservePercent);
+    }
+
+    [Fact]
+    public void CardRecalculatesWhenTripBudgetSettingsChange()
+    {
+        var cut = Render<VariantCard>(p => p.Add(x => x.Variant, new Variant { Expenses = [10000, 0, 0, 0, 0, 0] })
+            .Add(x => x.BudgetLimitKopecks, 20000));
+        Assert.Contains("До лимита осталось — 100 ₽", cut.Markup);
+        cut.Render(p => p.Add(x => x.BudgetLimitKopecks, 5000).Add(x => x.ReservePercent, 10));
+        Assert.Contains("Превышение лимита — 60 ₽", cut.Markup);
+        Assert.DoesNotContain("До лимита осталось", cut.Markup);
+    }
 }

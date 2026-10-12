@@ -143,3 +143,11 @@ textarea { resize:vertical; }
 
 .analytics-consent p { margin: 0 0 .5rem; }
 .auth-divider { margin: .75rem 0 .25rem; color: #526278; text-align: center; }
+.trip-budget-settings { color: var(--ink); font-size: 14px; margin: 12px 0 20px; }
+.budget-assessment { font-size: 13px; margin: 8px 0; }
+.budget-assessment p { margin: 4px 0; overflow-wrap: anywhere; }
+.clarifications { margin: 14px 0; border-top: 1px solid var(--line); padding-top: 12px; }
+.clarifications summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 600; }
+.clarifications ul { padding-left: 20px; margin: 0; }
+.clarifications li { margin: 6px 0; overflow-wrap: anywhere; }
+.clarifications li .mud-button-root { display: block; }

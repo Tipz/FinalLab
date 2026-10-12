@@ -221,6 +221,9 @@ namespace Together.Api.Data.Migrations
                     b.Property<int>("Adults")
                         .HasColumnType("integer");
 
+                    b.Property<long?>("BudgetLimitKopecks")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -234,6 +237,11 @@ namespace Together.Api.Data.Migrations
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("ReservePercent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<long>("Revision")
                         .IsConcurrencyToken()
@@ -253,9 +261,13 @@ namespace Together.Api.Data.Migrations
                         {
                             t.HasCheckConstraint("ck_trips_adults", "\"Adults\" BETWEEN 1 AND 10");
 
+                            t.HasCheckConstraint("ck_trips_budget_limit", "\"BudgetLimitKopecks\" IS NULL OR \"BudgetLimitKopecks\" BETWEEN 0 AND 10000000000");
+
                             t.HasCheckConstraint("ck_trips_dates", "\"EndDate\" > \"StartDate\"");
 
                             t.HasCheckConstraint("ck_trips_name", "char_length(\"Name\") BETWEEN 1 AND 100");
+
+                            t.HasCheckConstraint("ck_trips_reserve_percent", "\"ReservePercent\" BETWEEN 0 AND 100");
 
                             t.HasCheckConstraint("ck_trips_revision", "\"Revision\" >= 0");
                         });

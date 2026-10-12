@@ -129,6 +129,8 @@ public sealed class ApiTripStore(ApiHttp api)
         StartDate = trip.StartDate,
         EndDate = trip.EndDate,
         Adults = trip.Adults,
+        BudgetLimitKopecks = trip.BudgetLimitKopecks,
+        ReservePercent = trip.ReservePercent,
         ChildAges = [.. trip.ChildAges]
     };
 
@@ -161,6 +163,8 @@ public sealed class ApiTripStore(ApiHttp api)
         StartDate = source.StartDate,
         EndDate = source.EndDate,
         Adults = source.Adults,
+        BudgetLimitKopecks = source.BudgetLimitKopecks,
+        ReservePercent = source.ReservePercent,
         ChildAges = source.ChildAges,
         SelectedVariantIds = [.. source.SelectedVariantIds],
         SelectedCriteria = [.. source.SelectedCriteria],
@@ -195,7 +199,8 @@ public sealed class ApiTripStore(ApiHttp api)
     };
 
     private static bool TripFieldsChanged(Trip x, Trip y) => x.Name != y.Name || x.StartDate != y.StartDate ||
-        x.EndDate != y.EndDate || x.Adults != y.Adults || !x.ChildAges.SequenceEqual(y.ChildAges);
+        x.EndDate != y.EndDate || x.Adults != y.Adults || !x.ChildAges.SequenceEqual(y.ChildAges) ||
+        x.BudgetLimitKopecks != y.BudgetLimitKopecks || x.ReservePercent != y.ReservePercent;
 
     private static bool VariantEqual(TripVariant x, TripVariant y) => x.Name == y.Name && x.Destination == y.Destination &&
         x.Accommodation == y.Accommodation && x.SourceUrl == y.SourceUrl && x.RoadDescription == y.RoadDescription &&

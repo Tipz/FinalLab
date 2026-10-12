@@ -8,8 +8,10 @@ public sealed class TripDraft
     public string StartDate { get; set; } = "";
     public string EndDate { get; set; } = "";
     public string Adults { get; set; } = "2";
+    public string BudgetLimit { get; set; } = "";
+    public string ReservePercent { get; set; } = "0";
     public List<string> ChildAges { get; set; } = [""];
-    public static TripDraft From(Trip t) => new() { Name = t.Name, StartDate = t.StartDate.ToString("yyyy-MM-dd"), EndDate = t.EndDate.ToString("yyyy-MM-dd"), Adults = t.Adults.ToString(), ChildAges = t.ChildAges.Select(x => x.ToString()).ToList() };
+    public static TripDraft From(Trip t) => new() { Name = t.Name, StartDate = t.StartDate.ToString("yyyy-MM-dd"), EndDate = t.EndDate.ToString("yyyy-MM-dd"), Adults = t.Adults.ToString(), ChildAges = t.ChildAges.Select(x => x.ToString()).ToList(), BudgetLimit = Budget.Input(t.BudgetLimitKopecks), ReservePercent = t.ReservePercent.ToString(CultureInfo.InvariantCulture) };
     public Dictionary<string, string> Validate()
     {
         var errors = new Dictionary<string, string>();
@@ -21,6 +23,10 @@ public sealed class TripDraft
             errors["end"] = "Окончание должно быть позже начала";
         if (!int.TryParse(Adults, out var adults) || adults is < 1 or > 10)
             errors["adults"] = "Укажите целое число от 1 до 10";
+        if (!Budget.TryParse(BudgetLimit, out _))
+            errors["budget-limit"] = "Укажите сумму от 0 до 100 000 000 ₽, не более двух знаков после запятой";
+        if (!int.TryParse(ReservePercent, out var reserve) || reserve is < 0 or > 100)
+            errors["reserve-percent"] = "Укажите целый процент от 0 до 100";
         for (var i = 0; i < ChildAges.Count; i++)
             if (!int.TryParse(ChildAges[i], out var age) || age is < 0 or > 17)
                 errors[$"child-{i}"] = "Укажите целый возраст от 0 до 17 лет";
@@ -45,6 +51,9 @@ public sealed class TripDraft
         t.StartDate = start;
         t.EndDate = end;
         t.Adults = adults;
+        Budget.TryParse(BudgetLimit, out var budgetLimit);
+        t.BudgetLimitKopecks = budgetLimit;
+        t.ReservePercent = int.Parse(ReservePercent, CultureInfo.InvariantCulture);
         t.ChildAges = ages;
     }
 }

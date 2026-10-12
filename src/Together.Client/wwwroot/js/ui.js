@@ -14,7 +14,16 @@ window.tripUi = {
         if (this.opener?.isConnected) this.opener.focus(); else document.querySelector('h1')?.focus();
     },
     setDirty(value) { this.dirty = value; },
-    focusError() { document.querySelector('dialog [aria-invalid="true"]')?.focus(); }
+    focusError() { document.querySelector('dialog [aria-invalid="true"]')?.focus(); },
+    focusField(id) {
+        requestAnimationFrame(() => {
+            const field = document.getElementById(id);
+            if (field && document.querySelector('dialog[open]')?.contains(field)) {
+                field.focus();
+                field.scrollIntoView({ block: 'center' });
+            }
+        });
+    }
 };
 window.addEventListener('resize', () => window.tripUi.fit());
 document.addEventListener('keydown', event => {

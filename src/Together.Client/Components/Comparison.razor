@@ -23,7 +23,7 @@
                 if (!Trip.SelectedCriteria.Contains(key)) continue;
                 <tr><th scope="row">@Catalog.CriterionLabels[i]</th>@foreach (var v in Selected)
                 {
-                    <td>@if (key == "budget") { <BudgetView Expenses="v.Expenses" NeedsReview="v.NeedsBudgetReview" /> } else { @Cell(v, key) }</td>
+                    <td>@if (key == "budget") { <BudgetView Expenses="v.Expenses" NeedsReview="v.NeedsBudgetReview" BudgetLimitKopecks="Trip.BudgetLimitKopecks" ReservePercent="Trip.ReservePercent" ShowAssessment /> } else { @Cell(v, key) }</td>
                 }</tr>
             }</tbody></table>
         </div>

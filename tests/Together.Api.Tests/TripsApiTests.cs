@@ -115,6 +115,74 @@ public sealed class TripsApiTests(TogetherApiFactory factory) : IClassFixture<To
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
     }
 
+    [Fact]
+    public async Task BudgetSettingsPersistAndConflictDoesNotOverwriteThem()
+    {
+        using var client = factory.CreateClient();
+        var email = $"budget-{Guid.NewGuid():N}@example.test";
+        await RegisterAndLogin(client, email);
+        var request = new TripWriteRequest
+        {
+            Name = "Бюджетная поездка", StartDate = new(2027, 7, 1), EndDate = new(2027, 7, 8),
+            Adults = 2, ChildAges = [4], BudgetLimitKopecks = 15000000, ReservePercent = 10
+        };
+        using var response = await SendWithAntiforgery(client, HttpMethod.Post, ApiRoutes.Trips, request);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var created = (await response.Content.ReadFromJsonAsync<TripResponse>())!;
+        Assert.Equal(15000000, created.BudgetLimitKopecks);
+        Assert.Equal(10, created.ReservePercent);
+        var variantRequest = new VariantWriteRequest
+        {
+            ExpectedTripRevision = created.Revision, Name = "Домик", Destination = "Лес", Accommodation = "Дом",
+            Expenses = [1, 0, 0, 0, 0, 0]
+        };
+        using var variantResponse = await SendWithAntiforgery(client, HttpMethod.Post, $"{ApiRoutes.Trips}/{created.Id}/variants", variantRequest);
+        Assert.Equal(HttpStatusCode.Created, variantResponse.StatusCode);
+        var withVariant = (await variantResponse.Content.ReadFromJsonAsync<TripResponse>())!;
+        var update = new TripWriteRequest
+        {
+            Name = request.Name, StartDate = request.StartDate, EndDate = request.EndDate, Adults = 2,
+            ChildAges = [4], ExpectedRevision = withVariant.Revision, BudgetLimitKopecks = 0, ReservePercent = 100
+        };
+        using var updatedResponse = await SendWithAntiforgery(client, HttpMethod.Put, $"{ApiRoutes.Trips}/{created.Id}", update);
+        Assert.Equal(HttpStatusCode.OK, updatedResponse.StatusCode);
+        using var staleResponse = await SendWithAntiforgery(client, HttpMethod.Put, $"{ApiRoutes.Trips}/{created.Id}", update);
+        Assert.Equal(HttpStatusCode.Conflict, staleResponse.StatusCode);
+        var saved = (await client.GetFromJsonAsync<TripResponse>($"{ApiRoutes.Trips}/{created.Id}"))!;
+        Assert.Equal(0, saved.BudgetLimitKopecks);
+        Assert.Equal(100, saved.ReservePercent);
+        Assert.Equal(variantRequest.Expenses, Assert.Single(saved.Variants).Expenses);
+        Assert.False(saved.Variants[0].NeedsBudgetReview);
+        using var logout = await SendWithAntiforgery(client, HttpMethod.Post, $"{ApiRoutes.Auth}/logout", new { });
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+        using var login = await SendWithAntiforgery(client, HttpMethod.Post, $"{ApiRoutes.Auth}/login?useCookies=true",
+            new { email, password = "correct horse battery staple" });
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var restored = (await client.GetFromJsonAsync<TripResponse>($"{ApiRoutes.Trips}/{created.Id}"))!;
+        Assert.Equal(0, restored.BudgetLimitKopecks);
+        Assert.Equal(100, restored.ReservePercent);
+        await RegisterAndLogin(client, $"budget-unused-{Guid.NewGuid():N}@example.test");
+        using var denied = await SendWithAntiforgery(client, HttpMethod.Put, $"{ApiRoutes.Trips}/{created.Id}", update);
+        Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(-1L, 0)]
+    [InlineData(10000000001L, 0)]
+    [InlineData(null, -1)]
+    [InlineData(null, 101)]
+    public async Task InvalidBudgetSettingsReturnValidationProblem(long? limit, int reserve)
+    {
+        using var client = factory.CreateClient();
+        await RegisterAndLogin(client, $"budget-invalid-{Guid.NewGuid():N}@example.test");
+        using var response = await SendWithAntiforgery(client, HttpMethod.Post, ApiRoutes.Trips, new TripWriteRequest
+        {
+            Name = "Лето", StartDate = new(2027, 7, 1), EndDate = new(2027, 7, 8), Adults = 2,
+            ChildAges = [4], BudgetLimitKopecks = limit, ReservePercent = reserve
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     internal static async Task<HttpResponseMessage> SendWithAntiforgery<T>(HttpClient client, HttpMethod method, string uri, T value)
     {
         var token = await client.GetFromJsonAsync<AntiforgeryTokenResponse>(ApiRoutes.Antiforgery);

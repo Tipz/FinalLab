@@ -59,6 +59,8 @@ public static class TripsEndpoints
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             Adults = request.Adults,
+            BudgetLimitKopecks = request.BudgetLimitKopecks,
+            ReservePercent = request.ReservePercent,
             CreatedAt = now,
             UpdatedAt = now,
             Revision = 1
@@ -97,6 +99,8 @@ public static class TripsEndpoints
         trip.StartDate = request.StartDate;
         trip.EndDate = request.EndDate;
         trip.Adults = request.Adults;
+        trip.BudgetLimitKopecks = request.BudgetLimitKopecks;
+        trip.ReservePercent = request.ReservePercent;
         db.TripChildren.RemoveRange(trip.Children);
         AddChildren(trip, request.ChildAges);
         if (familyChanged)
@@ -242,7 +246,7 @@ public static class TripsEndpoints
         trip.SelectedVariants.OrderBy(x => x.Position).Select(x => x.VariantId).ToArray(),
         trip.SelectedCriteria.OrderBy(x => x.Position).Select(x => x.Criterion).ToArray(),
         trip.Variants.OrderBy(x => x.CreatedAt).Select(ToResponse).ToArray(),
-        trip.CreatedAt, trip.UpdatedAt, trip.Revision);
+        trip.CreatedAt, trip.UpdatedAt, trip.Revision, trip.BudgetLimitKopecks, trip.ReservePercent);
 
     private static VariantResponse ToResponse(VariantEntity variant)
     {
@@ -264,6 +268,10 @@ public static class TripsEndpoints
             errors["endDate"] = ["Окончание должно быть позже начала."];
         if (request.Adults is < 1 or > 10)
             errors["adults"] = ["Укажите число от 1 до 10."];
+        if (request.BudgetLimitKopecks is < 0 or > 10000000000L)
+            errors["budgetLimitKopecks"] = ["Укажите сумму от 0 до 100 000 000 ₽ либо null."];
+        if (request.ReservePercent is < 0 or > 100)
+            errors["reservePercent"] = ["Укажите целый процент от 0 до 100."];
         if (request.ChildAges is null || request.ChildAges.Length is < 1 or > 10 || request.ChildAges.Any(x => x is < 0 or > 17))
             errors["childAges"] = ["Нужно от 1 до 10 возрастов от 0 до 17 лет."];
         if (request.ExpectedRevision < 0)

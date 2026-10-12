@@ -32,10 +32,13 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             table.HasCheckConstraint("ck_trips_dates", "\"EndDate\" > \"StartDate\"");
             table.HasCheckConstraint("ck_trips_adults", "\"Adults\" BETWEEN 1 AND 10");
             table.HasCheckConstraint("ck_trips_revision", "\"Revision\" >= 0");
+            table.HasCheckConstraint("ck_trips_budget_limit", "\"BudgetLimitKopecks\" IS NULL OR \"BudgetLimitKopecks\" BETWEEN 0 AND 10000000000");
+            table.HasCheckConstraint("ck_trips_reserve_percent", "\"ReservePercent\" BETWEEN 0 AND 100");
         });
         trip.HasKey(x => x.Id);
         trip.Property(x => x.Name).HasMaxLength(100).IsRequired();
         trip.Property(x => x.Revision).IsConcurrencyToken();
+        trip.Property(x => x.ReservePercent).HasDefaultValue(0);
         trip.HasIndex(x => new { x.OwnerId, x.UpdatedAt });
         trip.HasOne(x => x.Owner).WithMany(x => x.Trips).HasForeignKey(x => x.OwnerId).OnDelete(DeleteBehavior.Cascade);
 

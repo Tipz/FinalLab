@@ -24,11 +24,12 @@
                     <div class="actions"><MudButton OnClick="EditTrip" Color="Color.Primary" Disabled="busy">Параметры поездки</MudButton><MudButton OnClick="NewTrip" Color="Color.Primary" Variant="MudBlazor.Variant.Outlined" Disabled="busy">Новая поездка</MudButton>@if (!HasExample) { <MudButton OnClick="AddExample" Color="Color.Secondary" Variant="MudBlazor.Variant.Text" Disabled="busy">Добавить пример</MudButton> }</div>
                 </section>
                 <div class="trip-meta"><span>@Current.StartDate.ToString("dd.MM.yyyy") — @Current.EndDate.ToString("dd.MM.yyyy")</span><span>Ночей: @Current.Nights</span><span>Взрослых: @Current.Adults · детей: @Current.ChildAges.Length</span><span>Возраст детей: @string.Join(", ", Current.ChildAges)</span></div>
+                <p class="trip-budget-settings">Лимит бюджета: @(Current.BudgetLimitKopecks is long limit ? Budget.Money(limit) : "не задан") · Резерв: @Current.ReservePercent%</p>
                 <Comparison @key="comparisonKey" Trip="Current" Busy="busy" ToggleCriterion="ToggleCriterion" AddVariant="NewVariant" />
                 <section id="options" aria-labelledby="options-title">
                     <div class="section-head"><div><div class="eyebrow">Собираем идеи</div><h2 id="options-title">Ваши варианты <span class="count">@Current.Variants.Count</span></h2></div><MudButton OnClick="NewVariant" Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Disabled="busy">Добавить вариант</MudButton></div>
                     @if (Current.Variants.Count == 0) { <div class="panel empty"><h3>Пока нет вариантов</h3><p>Добавьте найденное жильё и направление. Расходы и удобства можно уточнить позже.</p></div> }
-                    else { <div class="cards">@foreach (var v in Current.Variants.OrderBy(v => v.CreatedAt)) { <VariantCard @key="(v.Id, comparisonKey)" Variant="v" Selected="Current.SelectedVariantIds.Contains(v.Id)" Toggle="ToggleVariant" Edit="EditVariant" Delete="DeleteVariant" /> }</div> }
+                    else { <div class="cards">@foreach (var v in Current.Variants.OrderBy(v => v.CreatedAt)) { <VariantCard @key="(v.Id, comparisonKey)" Variant="v" Selected="Current.SelectedVariantIds.Contains(v.Id)" Busy="busy" BudgetLimitKopecks="Current.BudgetLimitKopecks" ReservePercent="Current.ReservePercent" SelectedCriteria="Current.SelectedCriteria" Clarify="ClarifyVariant" Toggle="ToggleVariant" Edit="EditVariant" Delete="DeleteVariant" /> }</div> }
                 </section>
                 </fieldset>
             }
@@ -44,7 +45,7 @@
 }
 @if (editor == "variant")
 {
-    <VariantEditor Original="editingVariant" Busy="busy" OnSave="SaveVariant" OnClose="CloseEditor"><ErrorContent>@StorageError</ErrorContent></VariantEditor>
+    <VariantEditor Original="editingVariant" Busy="busy" BudgetLimitKopecks="Current?.BudgetLimitKopecks" ReservePercent="@(Current?.ReservePercent ?? 0)" InitialFocusField="@initialFocusField" OnSave="SaveVariant" OnClose="CloseEditor"><ErrorContent>@StorageError</ErrorContent></VariantEditor>
 }
 @code {
     private RenderFragment StorageError => @<div>

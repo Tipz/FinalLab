@@ -17,6 +17,8 @@ public sealed class Trip
         get; set;
     }
     [JsonRequired] public int Adults { get; set; } = 2;
+    public long? BudgetLimitKopecks { get; set; }
+    public int ReservePercent { get; set; }
     [JsonRequired] public int[] ChildAges { get; set; } = [0];
     [JsonRequired] public List<Guid> SelectedVariantIds { get; set; } = [];
     [JsonRequired] public List<string> SelectedCriteria { get; set; } = [.. Catalog.Criteria];

@@ -11,6 +11,12 @@
             @if (DateOnly.TryParse(draft.StartDate, out var start) && DateOnly.TryParse(draft.EndDate, out var end) && end > start)
             { <p class="note">Количество ночей: @(end.DayNumber - start.DayNumber)</p> }
             <Field Id="adults" Label="Взрослые" InputMode="numeric" @bind-Value="draft.Adults" Error="@Error("adults")" Required />
+            <h3>Бюджет поездки</h3>
+            <p class="note">₽ за всю семью за всю поездку. Пустой лимит — не задан, 0 — нулевой лимит. Резерв добавляется к расходам каждого варианта на непредвиденные траты.</p>
+            <div class="form-grid">
+                <Field Id="budget-limit" Label="Лимит бюджета, ₽" InputMode="decimal" @bind-Value="draft.BudgetLimit" Error="@Error("budget-limit")" />
+                <Field Id="reserve-percent" Label="Резерв, %" InputMode="numeric" @bind-Value="draft.ReservePercent" Error="@Error("reserve-percent")" Required />
+            </div>
             <h3>Дети · @draft.ChildAges.Count</h3>
             @for (var i = 0; i < draft.ChildAges.Count; i++)
             {

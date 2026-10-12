@@ -12,6 +12,8 @@ public sealed class TripEntity
     }
     public ApplicationUser Owner { get; set; } = null!;
     public string Name { get; set; } = "";
+    public long? BudgetLimitKopecks { get; set; }
+    public int ReservePercent { get; set; }
     public DateOnly StartDate
     {
         get; set;

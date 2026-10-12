@@ -1,8 +1,38 @@
 <div class="budget-summary">
-    <strong class="price">@Budget.Summary(Expenses)</strong>
+    <strong class="price">@(Budget.Complete(Expenses) || Expenses.All(x => x is null) ? Budget.Summary(Expenses) : $"Известные расходы — {Budget.Summary(Expenses)}")</strong>
     @if (!Budget.Complete(Expenses)) { <span class="status-warning">Неполный бюджет</span> }
     @if (NeedsReview) { <span class="status-warning">@Catalog.ReviewNotice</span> }
 </div>
+@if (ShowAssessment && Expenses.Any(x => x.HasValue))
+{
+    var assessment = Budget.Assess(Expenses, BudgetLimitKopecks, ReservePercent, NeedsReview);
+    <div class="budget-assessment">
+        @if (ReservePercent > 0)
+        {
+            <p>Резерв @ReservePercent% — @Budget.Money(assessment.ReserveKopecks)</p>
+            <p>@(Budget.Complete(Expenses) ? "Всего с резервом" : "Известные расходы с резервом") — @Budget.Money(assessment.TotalKopecks)</p>
+        }
+        @switch (assessment.Status)
+        {
+            case BudgetLimitStatus.Exceeded:
+                <p class="status-warning">@(Budget.Complete(Expenses) ? "Превышение лимита" : "Уже выше лимита по известным расходам") — @Budget.Money(-assessment.RemainingKopecks!.Value)</p>
+                break;
+            case BudgetLimitStatus.WithinLimit:
+                <p>До лимита осталось — @Budget.Money(assessment.RemainingKopecks!.Value)</p>
+                break;
+            case BudgetLimitStatus.AtLimit:
+                <p>Бюджет равен лимиту. Свободного остатка нет.</p>
+                break;
+            case BudgetLimitStatus.Uncertain:
+                <p class="status-warning">@(NeedsReview ? "Проверьте расходы, чтобы оценить лимит." : "Итог может превысить лимит: заполните недостающие расходы.")</p>
+                break;
+        }
+    </div>
+}
+@if (ShowAssessment && BudgetLimitKopecks.HasValue && Expenses.All(x => x is null))
+{
+    <p class="note">Заполните расходы, чтобы оценить лимит.</p>
+}
 @if (Details)
 {
     <div class="units">за всю семью за всю поездку</div>
@@ -15,4 +45,7 @@
     [Parameter, EditorRequired] public long?[] Expenses { get; set; } = new long?[6];
     [Parameter] public bool NeedsReview { get; set; }
     [Parameter] public bool Details { get; set; }
+    [Parameter] public bool ShowAssessment { get; set; }
+    [Parameter] public long? BudgetLimitKopecks { get; set; }
+    [Parameter] public int ReservePercent { get; set; }
 }

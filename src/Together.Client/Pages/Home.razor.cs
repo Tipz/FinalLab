@@ -26,6 +26,7 @@ public partial class Home
     private string? editor, error, success;
     private Trip? editingTrip;
     private TripVariant? editingVariant;
+    private string? initialFocusField;
     private int comparisonKey;
     private Func<Task>? retry;
 
@@ -115,13 +116,20 @@ public partial class Home
     }
     private void NewVariant()
     {
+        initialFocusField = null;
         editingVariant = null;
         StartEditor("variant");
     }
     private void EditVariant(Guid id)
     {
+        initialFocusField = null;
         editingVariant = Current!.Variants.Single(v => v.Id == id);
         StartEditor("variant");
+    }
+    private void ClarifyVariant((Guid VariantId, string FieldId) item)
+    {
+        EditVariant(item.VariantId);
+        initialFocusField = item.FieldId;
     }
     private async Task CloseEditor()
     {
@@ -157,7 +165,7 @@ public partial class Home
             if (result != "ok")
             {
                 conflict = result == "conflict";
-                error = conflict ? "Данные изменились в другой вкладке. Черновик сохранён в форме: скопируйте нужные поля перед загрузкой актуальных данных." : "Не удалось сохранить данные в этом браузере";
+                error = conflict ? "Данные изменились в другой вкладке. Черновик сохранён в форме: скопируйте нужные поля перед загрузкой актуальных данных." : "Не удалось сохранить данные на сервере";
                 return false;
             }
             data = next;
@@ -172,7 +180,7 @@ public partial class Home
         }
         catch (Exception ex) when (ex is JSException or JsonException or InvalidOperationException or HttpRequestException)
         {
-            error = "Не удалось сохранить данные в этом браузере";
+            error = "Не удалось сохранить данные на сервере";
             return false;
         }
         finally { busy = false; }

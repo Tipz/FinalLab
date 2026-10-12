@@ -26,5 +26,26 @@ public static partial class Budget
     public static string Input(long? amount) => amount is null ? "" : (amount.Value / 100m).ToString("0.##", CultureInfo.InvariantCulture);
     public static long Total(long?[] expenses) => expenses.Sum(x => x ?? 0);
     public static bool Complete(long?[] expenses) => expenses.All(x => x.HasValue);
+    public static BudgetAssessment Assess(long?[] expenses, long? limitKopecks, int reservePercent, bool needsReview = false)
+    {
+        if (reservePercent is < 0 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(reservePercent));
+        var known = Total(expenses);
+        var reserve = (long)decimal.Ceiling(known * (decimal)reservePercent / 100);
+        var total = checked(known + reserve);
+        var remaining = limitKopecks.HasValue ? limitKopecks.Value - total : (long?)null;
+        var status = remaining switch
+        {
+            < 0 => BudgetLimitStatus.Exceeded,
+            null => BudgetLimitStatus.NotSet,
+            _ when !Complete(expenses) || needsReview => BudgetLimitStatus.Uncertain,
+            0 => BudgetLimitStatus.AtLimit,
+            _ => BudgetLimitStatus.WithinLimit
+        };
+        return new(known, reserve, total, remaining, status);
+    }
     public static string Summary(long?[] expenses) => expenses.All(x => x is null) ? "Бюджет не заполнен" : Money(Total(expenses));
 }
+
+public enum BudgetLimitStatus { NotSet, Uncertain, WithinLimit, AtLimit, Exceeded }
+public sealed record BudgetAssessment(long KnownKopecks, long ReserveKopecks, long TotalKopecks, long? RemainingKopecks, BudgetLimitStatus Status);

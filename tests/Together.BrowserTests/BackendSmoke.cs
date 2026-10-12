@@ -26,9 +26,8 @@ public static class BackendSmoke
         page.PageError += (_, message) => errors.Add(message);
         page.Console += (_, message) =>
         {
-            // The first anonymous visit deliberately probes /api/trips and receives 401
-            // before the router opens the login page.
-            if (message.Type == "error" && !message.Text.Contains("401", StringComparison.Ordinal))
+            // Anonymous probes return 401; budget scenarios deliberately exercise 409 and 503.
+            if (message.Type == "error" && !new[] { "401", "409", "503" }.Any(code => message.Text.Contains(code, StringComparison.Ordinal)))
                 errors.Add(message.Text);
         };
 
@@ -74,6 +73,7 @@ public static class BackendSmoke
             {
                 Timeout = 60_000
             });
+            await BudgetPlanningSmoke.RunAsync(page, context, baseUrl, evidence);
             await page.ScreenshotAsync(new()
             {
                 Path = Path.Combine(evidence, "backend-chromium.png"),
@@ -98,7 +98,7 @@ public static class BackendSmoke
                 throw new InvalidOperationException(string.Join(Environment.NewLine, errors));
 
             await WriteResult(evidence, browser.Version, true, null);
-            Console.WriteLine("PASS backend-smoke: registration, persisted server data and logout");
+            Console.WriteLine("PASS backend-smoke: registration, budget/reserve persistence, clarifications, failed write, real conflict, mobile/keyboard and logout");
             return 0;
         }
         catch (Exception ex)
