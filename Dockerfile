@@ -37,7 +37,7 @@ RUN dotnet publish src/Together.Client/Together.Client.csproj -c Release --no-re
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.11 AS final
 WORKDIR /app
-COPY --from=build /out/api .
+COPY --from=build --chown=app:app /out/api .
 USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

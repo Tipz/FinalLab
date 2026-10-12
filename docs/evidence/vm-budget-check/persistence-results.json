@@ -1,0 +1,8 @@
+{
+    "passed":  true,
+    "sameCookieSession":  true,
+    "gracefulShutdownExitCode":  0,
+    "appRecreated":  true,
+    "budgetAndReservePreserved":  true,
+    "postgresRecreated":  true
+}
