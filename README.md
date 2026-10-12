@@ -172,22 +172,44 @@ Authentication__Yandex__ClientSecret
 
 ## CI и публикация образа
 
+Результаты ревизии этапов и локальных проверок: [docs/ci_revision.md](docs/ci_revision.md).
+
 Workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) запускается для
-pull request и push в `main`.
+pull request и push в `main`, push тегов `v*`, а также вручную (`workflow_dispatch`).
 
 Последовательность проверок:
 
 ```text
-locked restore
+CodeQL (C# и JavaScript, блокирующий)
+  → locked restore
   → format и NuGet audit
   → Release build и xUnit
-  → CodeQL
   → Docker Compose и Chromium backend smoke
   → multi-platform publish
   → smoke опубликованного digest
 ```
 
-Pull request выполняет проверки, но не публикует образ. После успешного push в
+CodeQL — первый обязательный job: ошибка анализа, загрузки результатов или любое
+неподавленное замечание в SARIF останавливают последующие jobs. Для C# используется
+явная сборка с SDK из `global.json`, включая сгенерированный Razor-код. SARIF
+сохраняется в артефакт `codeql-results`; замечания доступны также в Code Scanning.
+Code Scanning должен быть доступен и настроен для advanced setup в репозитории.
+
+Format, аудит прямых и транзитивных NuGet-зависимостей, Release-сборка, оба
+xUnit-проекта и актуальный `--backend-smoke` объединены в один job `quality`:
+один restore и одна сборка решения после CodeQL. Отдельный необязательный
+Dependency Review удалён; аудит NuGet остаётся обязательным на всех запусках.
+Он проверяет уязвимости пакетов, но не заменяет проверку лицензий Dependency Review.
+Браузерные артефакты берутся из каталога текущего запуска, а не из старых `docs/evidence`.
+Smoke опубликованного digest сохранён: он проверяет запуск образа из GHCR
+через deployment Compose, включая отдельное выполнение миграций.
+
+Для запрета слияния PR настройте required status checks `CodeQL` и
+`Format, audit, Release, xUnit and backend smoke` в ruleset/branch protection;
+workflow сам по себе блокирует дальнейшие jobs и публикацию, но не кнопку merge.
+
+Pull request выполняет проверки, но не публикует образ. Ручной запуск публикует
+только из `main`. После успешного push в
 `main` workflow публикует образ для `linux/amd64` и `linux/arm64` в
 [GitHub Container Registry](https://github.com/Tipz/HT6/pkgs/container/ht6):
 

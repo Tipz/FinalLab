@@ -22,7 +22,7 @@ EF Core и PostgreSQL.
 - публикацию образа в `ghcr.io/tipz/ht6`;
 - smoke-проверку опубликованного образа.
 
-CodeQL запускается параллельно сборке после quality и имеет continue-on-error: true; его ошибка не блокирует публикацию образа.
+В ревизии от 12.10.2026 CodeQL стал первым обязательным job: ошибки анализа и неподавленные SARIF findings блокируют проверки и публикацию. Format, NuGet audit, Release, xUnit и backend smoke объединены в `quality`. Подробности и ограничения локальных проверок: [ci_revision.md](ci_revision.md). Сентябрьский GitHub run ниже относится к предыдущему workflow.
 
 Механизм автоматического production deployment через защищённый self-hosted
 GitHub Actions runner был реализован. Runner размещался непосредственно на

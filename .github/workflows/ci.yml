@@ -18,87 +18,8 @@ env:
   IMAGE_NAME: ghcr.io/tipz/ht6
 
 jobs:
-  quality:
-    name: Format and dependency audit
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Set up .NET
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-        with:
-          global-json-file: global.json
-          cache: true
-          cache-dependency-path: '**/packages.lock.json'
-      - name: Restore locked dependencies
-        run: dotnet restore Together.slnx --locked-mode
-      - name: Verify formatting
-        run: dotnet format Together.slnx --verify-no-changes --no-restore
-      - name: Audit direct and transitive NuGet dependencies
-        shell: pwsh
-        run: |
-          $report = dotnet package list --project Together.slnx --include-transitive --vulnerable --format json
-          $report
-          if ($report -match '"severity"\s*:') {
-            throw 'NuGet audit found a vulnerable package. Review the JSON report above.'
-          }
-
-  build_test:
-    name: Release build and xUnit
-    needs: quality
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Set up .NET
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
-        with:
-          global-json-file: global.json
-          cache: true
-          cache-dependency-path: '**/packages.lock.json'
-      - name: Restore locked dependencies
-        run: dotnet restore Together.slnx --locked-mode
-      - name: Build without compiler warnings
-        run: dotnet build Together.slnx --configuration Release --no-restore
-      - name: Run Core and UI tests
-        run: dotnet test tests/Together.Tests/Together.Tests.csproj --configuration Release --no-build --no-restore --logger "trx;LogFileName=test-results.trx" --results-directory TestResults/Core
-      - name: Run API integration tests
-        run: dotnet test tests/Together.Api.Tests/Together.Api.Tests.csproj --configuration Release --no-build --no-restore --logger "trx;LogFileName=test-results.trx" --results-directory TestResults/Api
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: test-results
-          path: TestResults
-          if-no-files-found: warn
-          retention-days: 7
-
-  dependency_review:
-    name: Dependency review (when GitHub supports it)
-    if: github.event_name == 'pull_request'
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Review dependency changes
-        uses: actions/dependency-review-action@40c09b7dc99638e5ddb0bfd91c1673effc064d8a # v4.8.1
-        with:
-          fail-on-severity: moderate
-
   codeql:
-    name: CodeQL (when GitHub supports it)
-    needs: quality
-    continue-on-error: true
+    name: CodeQL
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -107,20 +28,45 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
       - name: Initialize CodeQL
         uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
         with:
           languages: csharp,javascript-typescript
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
+          build-mode: manual
+      # A traced build includes generated Razor code and uses the pinned SDK.
+      - name: Build for CodeQL extraction
+        run: |
+          dotnet restore Together.slnx --locked-mode
+          dotnet build Together.slnx --configuration Release --no-restore
       - name: Analyze
         uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
+        with:
+          output: codeql-results
+          wait-for-processing: true
+      # Uploading SARIF alone does not fail the job when findings exist.
+      - name: Block on CodeQL findings
+        shell: pwsh
+        run: .github/scripts/Test-CodeQlResults.ps1 -ResultsPath codeql-results
+      - name: Upload CodeQL results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: codeql-results
+          path: codeql-results/*.sarif
+          if-no-files-found: warn
+          retention-days: 7
 
-  backend_smoke:
-    name: Docker Compose and Chromium
-    needs: build_test
+  quality:
+    name: Format, audit, Release, xUnit and backend smoke
+    needs: codeql
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     permissions:
       contents: read
     env:
@@ -137,10 +83,37 @@ jobs:
           global-json-file: global.json
           cache: true
           cache-dependency-path: '**/packages.lock.json'
-      - name: Restore and build browser test
+      - name: Restore locked dependencies
+        run: dotnet restore Together.slnx --locked-mode
+      - name: Verify formatting
+        run: dotnet format Together.slnx --verify-no-changes --no-restore
+      - name: Audit direct and transitive NuGet dependencies
+        shell: pwsh
         run: |
-          dotnet restore Together.slnx --locked-mode
-          dotnet build Together.slnx --configuration Release --no-restore
+          $report = dotnet package list --project Together.slnx --no-restore --include-transitive --vulnerable --format json
+          if ($LASTEXITCODE -ne 0) {
+            throw 'NuGet audit command failed.'
+          }
+          $report
+          if ($report -match '"severity"\s*:') {
+            throw 'NuGet audit found a vulnerable package. Review the JSON report above.'
+          }
+
+      - name: Build without compiler warnings
+        run: dotnet build Together.slnx --configuration Release --no-restore
+      - name: Run Core and UI tests
+        run: dotnet test tests/Together.Tests/Together.Tests.csproj --configuration Release --no-build --no-restore --logger "trx;LogFileName=test-results.trx" --results-directory TestResults/Core
+      - name: Run API integration tests
+        run: dotnet test tests/Together.Api.Tests/Together.Api.Tests.csproj --configuration Release --no-build --no-restore --logger "trx;LogFileName=test-results.trx" --results-directory TestResults/Api
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: test-results
+          path: TestResults
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Validate deployment Compose file
         run: docker compose --file docker-compose.deploy.yml config --quiet
       - name: Install Chromium
@@ -149,7 +122,7 @@ jobs:
       - name: Start application stack and wait for readiness
         shell: bash
         run: |
-          docker compose up --build --detach
+          docker compose up --build --detach --wait --wait-timeout 180
           for attempt in {1..90}; do
             if curl --fail --silent --show-error http://localhost:8080/health/ready > /dev/null; then
               exit 0
@@ -162,6 +135,7 @@ jobs:
       - name: Run current backend browser smoke
         env:
           APP_URL: http://localhost:8080
+          BROWSER_EVIDENCE_DIR: ${{ runner.temp }}/browser-evidence
         run: dotnet run --project tests/Together.BrowserTests --configuration Release --no-build -- --backend-smoke
       - name: Collect container logs
         if: always()
@@ -173,7 +147,7 @@ jobs:
         with:
           name: browser-evidence
           path: |
-            docs/evidence
+            ${{ runner.temp }}/browser-evidence
             ${{ runner.temp }}/docker-compose.log
           if-no-files-found: warn
           retention-days: 7
@@ -183,15 +157,13 @@ jobs:
 
   publish:
     name: Publish immutable multi-platform image
-    needs: backend_smoke
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: quality
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 50
     permissions:
       contents: read
       packages: write
-    outputs:
-      image_ref: ${{ steps.reference.outputs.value }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -233,9 +205,11 @@ jobs:
           provenance: mode=min
           sbom: true
       - name: Export immutable image reference
-        id: reference
         shell: bash
-        run: echo "value=${IMAGE_NAME}@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          echo "Published image (deploy by digest): ${IMAGE_NAME}@${IMAGE_DIGEST}" >> "$GITHUB_STEP_SUMMARY"
       - name: Smoke test published digest
         shell: bash
         env:
@@ -243,7 +217,7 @@ jobs:
           POSTGRES_PASSWORD: ci-only-password
           SECURE_COOKIES: 'false'
         run: |
-          docker compose --file docker-compose.deploy.yml up --detach
+          docker compose --file docker-compose.deploy.yml up --detach --wait --wait-timeout 180
           for attempt in {1..90}; do
             if curl --fail --silent --show-error http://127.0.0.1:8080/health/ready > /dev/null; then
               docker compose --file docker-compose.deploy.yml ps
@@ -255,7 +229,7 @@ jobs:
           docker compose --file docker-compose.deploy.yml logs --no-color
           exit 1
       - name: Stop published-image smoke stack
-        if: always()
+        if: always() && steps.build.outputs.digest != ''
         env:
           TOGETHER_IMAGE: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           POSTGRES_PASSWORD: ci-only-password

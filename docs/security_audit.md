@@ -169,15 +169,18 @@ Findings сопоставлены с кодом; исправления подт
 ### SA-09 — Отсутствует автоматический vulnerability/SAST gate
 
 - **Предварительная severity:** Medium.
-- **Статус:** NuGet gate реализован; CodeQL запускается без блокировки publish (`continue-on-error: true`, отдельная ветка после `quality`). Обязательный SAST gate не реализован; Dependency Review требует PR.
+- **Статус:** с 12.10.2026 NuGet и CodeQL gates обязательны. CodeQL запускается первым, ошибки и неподавленные SARIF findings блокируют дальнейшие jobs. Настройка required checks для запрета merge остаётся отдельной настройкой репозитория.
 - **Компоненты:** GitHub Actions и repository settings.
 - **Наблюдение:** build может обнаружить часть NuGet audit warnings, но отдельного
   отчёта транзитивных уязвимостей, dependency review и CodeQL нет.
-- **Исправление:** NuGet JSON gate падает при наличии vulnerability; dependency
-  review и CodeQL добавлены как availability-dependent jobs.
+- **Исправление:** NuGet JSON gate падает при наличии vulnerability и ошибке команды;
+  CodeQL анализирует C#/JavaScript, после анализа выполняется блокирующая проверка SARIF.
+  Необязательный Dependency Review удалён; аудит NuGet сохранён для всех запусков.
 - **Проверка:** NuGet audit и CodeQL успешно прошли в
   [GitHub Actions](https://github.com/Tipz/HT6/actions/runs/35828731866).
-  Dependency Review ожидаемо пропущен для push и должен проверяться в PR.
+  В том сентябрьском запуске Dependency Review был пропущен для push.
+  Новая конфигурация проверена actionlint и локальными сценариями SARIF gate;
+  полный CodeQL на GitHub после ревизии не запускался. [Результаты](ci_revision.md).
 
 ### SA-10 — OAuth credential в отслеживаемом env-шаблоне
 

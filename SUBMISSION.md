@@ -11,7 +11,7 @@ JSON-логирование.
 
 | Требование | Реализация |
 | --- | --- |
-| CI/CD | `.github/workflows/ci.yml`: format/audit → build/tests → backend smoke → multi-platform publish → smoke опубликованного digest; CodeQL параллельно build/tests и не блокирует publish |
+| CI/CD | `.github/workflows/ci.yml`: обязательный CodeQL → format/audit, build/tests и backend smoke → multi-platform publish → smoke опубликованного digest; актуальная ревизия от 12.10.2026 описана в [ci_revision.md](docs/ci_revision.md) |
 | Container | `ghcr.io/tipz/ht6` для `linux/amd64` и `linux/arm64` |
 | Deployment | Ручной запуск `docker-compose.deploy.yml` по immutable digest; отдельный `migrate`, persistent PostgreSQL и Data Protection |
 | OAuth 2.0 | Backend Authorization Code Flow с PKCE через Яндекс ID; вход по паролю сохранён |

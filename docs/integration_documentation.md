@@ -44,15 +44,19 @@ antiforgery, JSON-логи и единый CI/publish pipeline. Учебный p
 
 | Workflow | Фактическая функция | Ограничение |
 | --- | --- | --- |
-| `.github/workflows/ci.yml` | Format/NuGet audit → build/xUnit → Compose/Chromium → publish digest → smoke опубликованного образа; CodeQL параллельно build/xUnit, без блокировки publish | [Успешный run](https://github.com/Tipz/HT6/actions/runs/35828731866) |
+| `.github/workflows/ci.yml` | Обязательный CodeQL → format/NuGet audit, build/xUnit и Compose/Chromium → publish digest → smoke опубликованного образа | [Ревизия 12.10.2026](ci_revision.md); [успешный run предыдущей версии](https://github.com/Tipz/HT6/actions/runs/35828731866) |
 
 ### Последовательность обязательных этапов
 
 ```text
-format/security → build/tests → backend smoke → publish → published-image smoke
+CodeQL → quality (format/audit, build/tests, backend smoke) → publish → published-image smoke
 ```
 
-CodeQL зависит от `quality`, запускается параллельно `build_test` и имеет `continue-on-error: true`. Он не является обязательным gate публикации. Pull request выполняет только проверки. Push в `main` после успешных проверок
+CodeQL запускается первым без `continue-on-error`; `quality` зависит от CodeQL,
+publish — от `quality`. Ошибки анализа и неподавленные SARIF findings блокируют
+последующие jobs. Отдельный Dependency Review удалён; NuGet audit обязателен.
+Pull request выполняет только проверки. Ручной запуск публикует только из `main`.
+Push в `main` после успешных проверок
 публикует immutable image. Production обновляется вручную через
 `docker-compose.deploy.yml`.
 
