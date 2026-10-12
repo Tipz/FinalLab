@@ -240,7 +240,7 @@ DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260917081329_InitialPostgreSql') THEN
     INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-    VALUES ('20260917081329_InitialPostgreSql', '10.0.10');
+    VALUES ('20260917081329_InitialPostgreSql', '10.0.12');
     END IF;
 END $EF$;
 COMMIT;
@@ -279,7 +279,7 @@ DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261012132837_TripBudgetSettings') THEN
     INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-    VALUES ('20261012132837_TripBudgetSettings', '10.0.10');
+    VALUES ('20261012132837_TripBudgetSettings', '10.0.12');
     END IF;
 END $EF$;
 COMMIT;

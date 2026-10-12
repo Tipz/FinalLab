@@ -40,8 +40,14 @@ public sealed record VariantResponse(
 
 public sealed class TripWriteRequest
 {
-    public long? BudgetLimitKopecks { get; init; }
-    public int ReservePercent { get; init; }
+    public long? BudgetLimitKopecks
+    {
+        get; init;
+    }
+    public int ReservePercent
+    {
+        get; init;
+    }
     public Guid? Id
     {
         get; init;

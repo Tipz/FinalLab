@@ -211,15 +211,15 @@ workflow сам по себе блокирует дальнейшие jobs и п
 Pull request выполняет проверки, но не публикует образ. Ручной запуск публикует
 только из `main`. После успешного push в
 `main` workflow публикует образ для `linux/amd64` и `linux/arm64` в
-[GitHub Container Registry](https://github.com/Tipz/HT6/pkgs/container/ht6):
+[GitHub Container Registry](https://github.com/Tipz/HT6/pkgs/container/together):
 
 ```text
-ghcr.io/tipz/ht6
+ghcr.io/tipz/together
 ```
 
 Доступны теги `latest`, `main`, `sha-<полный SHA>` и `v*` для Git-тегов.
 Production deployment рекомендуется выполнять по неизменяемой ссылке
-`ghcr.io/tipz/ht6@sha256:...`.
+`ghcr.io/tipz/together@sha256:...`.
 
 Автоматический deployment через защищённый self-hosted GitHub runner был
 подготовлен для локальной production-машины, но отключён в текущем универсальном
@@ -241,7 +241,7 @@ cp deploy.env.example .env.deploy
 Заполните как минимум:
 
 ```dotenv
-TOGETHER_IMAGE=ghcr.io/tipz/ht6@sha256:replace-with-published-digest
+TOGETHER_IMAGE=ghcr.io/tipz/together@sha256:replace-with-published-digest
 POSTGRES_PASSWORD=replace-with-a-long-random-password
 ```
 

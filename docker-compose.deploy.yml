@@ -24,7 +24,7 @@ services:
         max-file: "5"
 
   migrate:
-    image: ${TOGETHER_IMAGE:?Set TOGETHER_IMAGE to ghcr.io/tipz/ht6@sha256:...}
+    image: ${TOGETHER_IMAGE:?Set TOGETHER_IMAGE to ghcr.io/tipz/together@sha256:...}
     pull_policy: always
     command: ["--migrate"]
     environment:
@@ -44,7 +44,7 @@ services:
         max-file: "2"
 
   app:
-    image: ${TOGETHER_IMAGE:?Set TOGETHER_IMAGE to ghcr.io/tipz/ht6@sha256:...}
+    image: ${TOGETHER_IMAGE:?Set TOGETHER_IMAGE to ghcr.io/tipz/together@sha256:...}
     pull_policy: always
     environment:
       ASPNETCORE_ENVIRONMENT: Production

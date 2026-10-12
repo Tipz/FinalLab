@@ -123,8 +123,13 @@ public sealed class TripsApiTests(TogetherApiFactory factory) : IClassFixture<To
         await RegisterAndLogin(client, email);
         var request = new TripWriteRequest
         {
-            Name = "Бюджетная поездка", StartDate = new(2027, 7, 1), EndDate = new(2027, 7, 8),
-            Adults = 2, ChildAges = [4], BudgetLimitKopecks = 15000000, ReservePercent = 10
+            Name = "Бюджетная поездка",
+            StartDate = new(2027, 7, 1),
+            EndDate = new(2027, 7, 8),
+            Adults = 2,
+            ChildAges = [4],
+            BudgetLimitKopecks = 15000000,
+            ReservePercent = 10
         };
         using var response = await SendWithAntiforgery(client, HttpMethod.Post, ApiRoutes.Trips, request);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -133,7 +138,10 @@ public sealed class TripsApiTests(TogetherApiFactory factory) : IClassFixture<To
         Assert.Equal(10, created.ReservePercent);
         var variantRequest = new VariantWriteRequest
         {
-            ExpectedTripRevision = created.Revision, Name = "Домик", Destination = "Лес", Accommodation = "Дом",
+            ExpectedTripRevision = created.Revision,
+            Name = "Домик",
+            Destination = "Лес",
+            Accommodation = "Дом",
             Expenses = [1, 0, 0, 0, 0, 0]
         };
         using var variantResponse = await SendWithAntiforgery(client, HttpMethod.Post, $"{ApiRoutes.Trips}/{created.Id}/variants", variantRequest);
@@ -141,8 +149,14 @@ public sealed class TripsApiTests(TogetherApiFactory factory) : IClassFixture<To
         var withVariant = (await variantResponse.Content.ReadFromJsonAsync<TripResponse>())!;
         var update = new TripWriteRequest
         {
-            Name = request.Name, StartDate = request.StartDate, EndDate = request.EndDate, Adults = 2,
-            ChildAges = [4], ExpectedRevision = withVariant.Revision, BudgetLimitKopecks = 0, ReservePercent = 100
+            Name = request.Name,
+            StartDate = request.StartDate,
+            EndDate = request.EndDate,
+            Adults = 2,
+            ChildAges = [4],
+            ExpectedRevision = withVariant.Revision,
+            BudgetLimitKopecks = 0,
+            ReservePercent = 100
         };
         using var updatedResponse = await SendWithAntiforgery(client, HttpMethod.Put, $"{ApiRoutes.Trips}/{created.Id}", update);
         Assert.Equal(HttpStatusCode.OK, updatedResponse.StatusCode);
@@ -153,10 +167,16 @@ public sealed class TripsApiTests(TogetherApiFactory factory) : IClassFixture<To
         Assert.Equal(100, saved.ReservePercent);
         Assert.Equal(variantRequest.Expenses, Assert.Single(saved.Variants).Expenses);
         Assert.False(saved.Variants[0].NeedsBudgetReview);
-        using var logout = await SendWithAntiforgery(client, HttpMethod.Post, $"{ApiRoutes.Auth}/logout", new { });
+        using var logout = await SendWithAntiforgery(client, HttpMethod.Post, $"{ApiRoutes.Auth}/logout", new
+        {
+        });
         Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
         using var login = await SendWithAntiforgery(client, HttpMethod.Post, $"{ApiRoutes.Auth}/login?useCookies=true",
-            new { email, password = "correct horse battery staple" });
+            new
+            {
+                email,
+                password = "correct horse battery staple"
+            });
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         var restored = (await client.GetFromJsonAsync<TripResponse>($"{ApiRoutes.Trips}/{created.Id}"))!;
         Assert.Equal(0, restored.BudgetLimitKopecks);
@@ -177,8 +197,13 @@ public sealed class TripsApiTests(TogetherApiFactory factory) : IClassFixture<To
         await RegisterAndLogin(client, $"budget-invalid-{Guid.NewGuid():N}@example.test");
         using var response = await SendWithAntiforgery(client, HttpMethod.Post, ApiRoutes.Trips, new TripWriteRequest
         {
-            Name = "Лето", StartDate = new(2027, 7, 1), EndDate = new(2027, 7, 8), Adults = 2,
-            ChildAges = [4], BudgetLimitKopecks = limit, ReservePercent = reserve
+            Name = "Лето",
+            StartDate = new(2027, 7, 1),
+            EndDate = new(2027, 7, 8),
+            Adults = 2,
+            ChildAges = [4],
+            BudgetLimitKopecks = limit,
+            ReservePercent = reserve
         });
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

@@ -127,7 +127,7 @@ Compose сначала ждёт PostgreSQL, запускает одноразо�
 Единый workflow `.github/workflows/ci.yml` публикует OCI-образ:
 
 ```text
-ghcr.io/tipz/ht6
+ghcr.io/tipz/together
 ```
 
 Manifest содержит `linux/amd64` и `linux/arm64`. Push в `main` обновляет теги

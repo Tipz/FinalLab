@@ -280,3 +280,19 @@ GHCR manifest проверен анонимным запросом и содер
 [GitHub](https://github.com/Tipz/HT6), готовый контейнер — в
 [GHCR](https://github.com/Tipz/HT6/pkgs/container/ht6). Локальный запуск, CI и
 перенос образа описаны в [README](README.md).
+
+### Переименование Docker-образа — 12.10.2026
+
+Имя для следующих публикаций изменено с `ghcr.io/tipz/ht6` на
+`ghcr.io/tipz/together` в CI, deployment Compose и актуальной документации.
+Исторические результаты публикации выше относятся к прежнему имени.
+Новый образ в рамках этого изменения не публиковался.
+
+Проверки:
+
+- `git diff --check` — успешно.
+- `dotnet build Together.slnx --configuration Release --no-restore` — не запустилась: установлен 10.0.303.
+- `dotnet test tests/Together.Tests/Together.Tests.csproj --configuration Release --no-build --no-restore` — не запустились по той же причине.
+- `dotnet test tests/Together.Api.Tests/Together.Api.Tests.csproj --configuration Release --no-build --no-restore` — не запустились по той же причине.
+- `dotnet run --project tests/Together.BrowserTests --configuration Release --no-build -- --backend-smoke` — не запустился по той же причине.
+- Проверка deployment Compose не выполнена: команда `docker` недоступна в окружении.

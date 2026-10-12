@@ -81,7 +81,7 @@ Compose отображает `YANDEX_CLIENT_ID` и `YANDEX_CLIENT_SECRET` в ser
 
 Production target — локальная машина `192.168.1.26` с Docker Compose,
 существующими Traefik и локальным центром сертификации. Оператор
-вручную выбирает опубликованный `ghcr.io/tipz/ht6@<digest>`, выполняет отдельный
+вручную выбирает опубликованный `ghcr.io/tipz/together@<digest>`, выполняет отдельный
 `migrate`, запускает `app` и проверяет `/health/ready`. GitHub-hosted jobs выполняют
 проверки и публикацию образа, но не обращаются к приватному LAN-адресу.
 
@@ -95,7 +95,7 @@ Compose default публикует порт на `127.0.0.1`, а текущий 
 - собственный production URL целевого сервера;
 - HTTPS reverse proxy и доверенный сертификат;
 - каталог Compose и доступ оператора к нему;
-- доступ Docker host к `ghcr.io/tipz/ht6`, если package является приватным;
+- доступ Docker host к `ghcr.io/tipz/together`, если package является приватным;
 - backup и rollback procedure.
 
 ### Логи и rollback на Docker host
@@ -112,7 +112,7 @@ docker compose --env-file .env.deploy --file docker-compose.deploy.yml logs --si
 GitHub run/package history, задайте его только для команды и обновите приложение:
 
 ```bash
-export TOGETHER_IMAGE='ghcr.io/tipz/ht6@sha256:<previous-digest>'
+export TOGETHER_IMAGE='ghcr.io/tipz/together@sha256:<previous-digest>'
 docker compose --env-file .env.deploy --file docker-compose.deploy.yml pull app
 docker compose --env-file .env.deploy --file docker-compose.deploy.yml up -d --no-deps app
 curl --fail "$APP_URL/health/ready"

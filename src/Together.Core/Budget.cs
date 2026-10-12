@@ -47,5 +47,8 @@ public static partial class Budget
     public static string Summary(long?[] expenses) => expenses.All(x => x is null) ? "Бюджет не заполнен" : Money(Total(expenses));
 }
 
-public enum BudgetLimitStatus { NotSet, Uncertain, WithinLimit, AtLimit, Exceeded }
+public enum BudgetLimitStatus
+{
+    NotSet, Uncertain, WithinLimit, AtLimit, Exceeded
+}
 public sealed record BudgetAssessment(long KnownKopecks, long ReserveKopecks, long TotalKopecks, long? RemainingKopecks, BudgetLimitStatus Status);

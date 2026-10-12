@@ -19,7 +19,7 @@ EF Core и PostgreSQL.
 - запуск Docker Compose и браузерного Chromium smoke-теста;
 - CodeQL-анализ;
 - сборку multi-platform Docker image для `linux/amd64` и `linux/arm64`;
-- публикацию образа в `ghcr.io/tipz/ht6`;
+- публикацию образа в `ghcr.io/tipz/together`;
 - smoke-проверку опубликованного образа.
 
 В ревизии от 12.10.2026 CodeQL стал первым обязательным job: ошибки анализа и неподавленные SARIF findings блокируют проверки и публикацию. Format, NuGet audit, Release, xUnit и backend smoke объединены в `quality`. Подробности и ограничения локальных проверок: [ci_revision.md](ci_revision.md). Сентябрьский GitHub run ниже относится к предыдущему workflow.

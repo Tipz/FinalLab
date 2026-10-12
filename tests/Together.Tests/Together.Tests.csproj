@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Together.Client/Together.Client.csproj" />
     <PackageReference Include="bunit" Version="2.8.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.12" PrivateAssets="all" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
