@@ -16,6 +16,9 @@ concurrency:
 
 env:
   IMAGE_NAME: ghcr.io/tipz/ht6
+  # Hosted runner workloads can override WASM pack versions from the pinned SDK.
+  # This app uses NuGet WASM packs without native/AOT workloads, like its Docker build.
+  MSBuildEnableWorkloadResolver: 'false'
 
 jobs:
   codeql:
