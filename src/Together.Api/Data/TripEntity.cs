@@ -10,8 +10,14 @@ public sealed class TripEntity
     {
         get; set;
     }
-    public ApplicationUser Owner { get; set; } = null!;
-    public string Name { get; set; } = "";
+    public ApplicationUser Owner
+    {
+        get; set;
+    } = null!;
+    public string Name
+    {
+        get; set;
+    } = "";
     public long? BudgetLimitKopecks
     {
         get; set;
@@ -44,10 +50,22 @@ public sealed class TripEntity
     {
         get; set;
     }
-    public ICollection<TripChildEntity> Children { get; } = [];
-    public ICollection<VariantEntity> Variants { get; } = [];
-    public ICollection<SelectedVariantEntity> SelectedVariants { get; } = [];
-    public ICollection<SelectedCriterionEntity> SelectedCriteria { get; } = [];
+    public ICollection<TripChildEntity> Children
+    {
+        get;
+    } = [];
+    public ICollection<VariantEntity> Variants
+    {
+        get;
+    } = [];
+    public ICollection<SelectedVariantEntity> SelectedVariants
+    {
+        get;
+    } = [];
+    public ICollection<SelectedCriterionEntity> SelectedCriteria
+    {
+        get;
+    } = [];
 }
 
 public sealed class TripChildEntity
@@ -56,7 +74,10 @@ public sealed class TripChildEntity
     {
         get; set;
     }
-    public TripEntity Trip { get; set; } = null!;
+    public TripEntity Trip
+    {
+        get; set;
+    } = null!;
     public int Position
     {
         get; set;
@@ -73,12 +94,18 @@ public sealed class SelectedVariantEntity
     {
         get; set;
     }
-    public TripEntity Trip { get; set; } = null!;
+    public TripEntity Trip
+    {
+        get; set;
+    } = null!;
     public Guid VariantId
     {
         get; set;
     }
-    public VariantEntity Variant { get; set; } = null!;
+    public VariantEntity Variant
+    {
+        get; set;
+    } = null!;
     public int Position
     {
         get; set;
@@ -91,8 +118,14 @@ public sealed class SelectedCriterionEntity
     {
         get; set;
     }
-    public TripEntity Trip { get; set; } = null!;
-    public string Criterion { get; set; } = "";
+    public TripEntity Trip
+    {
+        get; set;
+    } = null!;
+    public string Criterion
+    {
+        get; set;
+    } = "";
     public int Position
     {
         get; set;

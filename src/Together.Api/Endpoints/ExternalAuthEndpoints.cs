@@ -20,7 +20,10 @@ public static class ExternalAuthEndpoints
         return endpoints;
     }
 
-    private static IResult StartYandexLogin(string? returnUrl, YandexProviderState provider)
+    private static IResult StartYandexLogin(
+        string? returnUrl,
+        YandexProviderState provider,
+        SignInManager<ApplicationUser> signInManager)
     {
         if (!provider.Enabled)
             return Results.NotFound();
@@ -32,7 +35,7 @@ public static class ExternalAuthEndpoints
 
         var callback = $"{ApiRoutes.Auth}/yandex/callback?returnUrl={Uri.EscapeDataString(localReturnUrl)}";
         return Results.Challenge(
-            new AuthenticationProperties { RedirectUri = callback },
+            signInManager.ConfigureExternalAuthenticationProperties(provider.Scheme, callback),
             [provider.Scheme]);
     }
 

@@ -56,7 +56,10 @@ public sealed class TripWriteRequest
     {
         get; init;
     }
-    public string Name { get; init; } = "";
+    public string Name
+    {
+        get; init;
+    } = "";
     public DateOnly StartDate
     {
         get; init;
@@ -69,7 +72,10 @@ public sealed class TripWriteRequest
     {
         get; init;
     }
-    public int[] ChildAges { get; init; } = [];
+    public int[] ChildAges
+    {
+        get; init;
+    } = [];
 }
 
 public sealed class VariantWriteRequest
@@ -86,12 +92,30 @@ public sealed class VariantWriteRequest
     {
         get; init;
     }
-    public string Name { get; init; } = "";
-    public string Destination { get; init; } = "";
-    public string Accommodation { get; init; } = "";
-    public string SourceUrl { get; init; } = "";
-    public string RoadDescription { get; init; } = "";
-    public string Notes { get; init; } = "";
+    public string Name
+    {
+        get; init;
+    } = "";
+    public string Destination
+    {
+        get; init;
+    } = "";
+    public string Accommodation
+    {
+        get; init;
+    } = "";
+    public string SourceUrl
+    {
+        get; init;
+    } = "";
+    public string RoadDescription
+    {
+        get; init;
+    } = "";
+    public string Notes
+    {
+        get; init;
+    } = "";
     public int? TravelMinutes
     {
         get; init;
@@ -100,15 +124,30 @@ public sealed class VariantWriteRequest
     {
         get; init;
     }
-    public string Kitchen { get; init; } = "unknown";
-    public string Crib { get; init; } = "unknown";
-    public string Playground { get; init; } = "unknown";
+    public string Kitchen
+    {
+        get; init;
+    } = "unknown";
+    public string Crib
+    {
+        get; init;
+    } = "unknown";
+    public string Playground
+    {
+        get; init;
+    } = "unknown";
     public int? DistanceMeters
     {
         get; init;
     }
-    public string DistanceTarget { get; init; } = "";
-    public long?[] Expenses { get; init; } = new long?[6];
+    public string DistanceTarget
+    {
+        get; init;
+    } = "";
+    public long?[] Expenses
+    {
+        get; init;
+    } = new long?[6];
     public bool BudgetReviewed
     {
         get; init;
@@ -121,6 +160,12 @@ public sealed class ComparisonWriteRequest
     {
         get; init;
     }
-    public Guid[] SelectedVariantIds { get; init; } = [];
-    public string[] SelectedCriteria { get; init; } = [];
+    public Guid[] SelectedVariantIds
+    {
+        get; init;
+    } = [];
+    public string[] SelectedCriteria
+    {
+        get; init;
+    } = [];
 }

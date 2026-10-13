@@ -10,13 +10,34 @@ public sealed class VariantEntity
     {
         get; set;
     }
-    public TripEntity Trip { get; set; } = null!;
-    public string Name { get; set; } = "";
-    public string Destination { get; set; } = "";
-    public string Accommodation { get; set; } = "";
-    public string SourceUrl { get; set; } = "";
-    public string RoadDescription { get; set; } = "";
-    public string Notes { get; set; } = "";
+    public TripEntity Trip
+    {
+        get; set;
+    } = null!;
+    public string Name
+    {
+        get; set;
+    } = "";
+    public string Destination
+    {
+        get; set;
+    } = "";
+    public string Accommodation
+    {
+        get; set;
+    } = "";
+    public string SourceUrl
+    {
+        get; set;
+    } = "";
+    public string RoadDescription
+    {
+        get; set;
+    } = "";
+    public string Notes
+    {
+        get; set;
+    } = "";
     public int? TravelMinutes
     {
         get; set;
@@ -25,14 +46,26 @@ public sealed class VariantEntity
     {
         get; set;
     }
-    public string Kitchen { get; set; } = "unknown";
-    public string Crib { get; set; } = "unknown";
-    public string Playground { get; set; } = "unknown";
+    public string Kitchen
+    {
+        get; set;
+    } = "unknown";
+    public string Crib
+    {
+        get; set;
+    } = "unknown";
+    public string Playground
+    {
+        get; set;
+    } = "unknown";
     public int? DistanceMeters
     {
         get; set;
     }
-    public string DistanceTarget { get; set; } = "";
+    public string DistanceTarget
+    {
+        get; set;
+    } = "";
     public bool NeedsBudgetReview
     {
         get; set;
@@ -49,7 +82,10 @@ public sealed class VariantEntity
     {
         get; set;
     }
-    public ICollection<VariantExpenseEntity> Expenses { get; } = [];
+    public ICollection<VariantExpenseEntity> Expenses
+    {
+        get;
+    } = [];
 }
 
 public sealed class VariantExpenseEntity
@@ -58,8 +94,14 @@ public sealed class VariantExpenseEntity
     {
         get; set;
     }
-    public VariantEntity Variant { get; set; } = null!;
-    public string Category { get; set; } = "";
+    public VariantEntity Variant
+    {
+        get; set;
+    } = null!;
+    public string Category
+    {
+        get; set;
+    } = "";
     public long? AmountKopecks
     {
         get; set;

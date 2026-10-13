@@ -63,12 +63,10 @@ public sealed class FakeYandexHandler(
             new Claim(ClaimTypes.NameIdentifier, providerKey),
             new Claim(ClaimTypes.Email, email)
         ], SchemeName);
-        var externalProperties = new AuthenticationProperties();
-        externalProperties.Items["LoginProvider"] = SchemeName;
         await Context.SignInAsync(
             IdentityConstants.ExternalScheme,
             new ClaimsPrincipal(identity),
-            externalProperties);
+            properties);
         Response.Redirect(properties.RedirectUri ?? "/api/auth/yandex/callback?returnUrl=%2F");
     }
 }

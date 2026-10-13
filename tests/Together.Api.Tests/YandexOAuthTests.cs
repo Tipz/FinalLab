@@ -12,6 +12,7 @@ public sealed class YandexOAuthTests(TogetherApiFactory factory) : IClassFixture
     {
         using var client = factory.CreateClient();
         using var first = await client.GetAsync($"{ApiRoutes.Auth}/yandex?returnUrl=%2F");
+        Assert.Contains("oauthResult=yandex", first.RequestMessage?.RequestUri?.Query);
         var firstUser = await client.GetFromJsonAsync<CurrentUserResponse>($"{ApiRoutes.Auth}/me");
         Assert.NotNull(firstUser);
 
@@ -22,6 +23,7 @@ public sealed class YandexOAuthTests(TogetherApiFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
 
         using var repeated = await client.GetAsync($"{ApiRoutes.Auth}/yandex?returnUrl=%2F");
+        Assert.Contains("oauthResult=yandex", repeated.RequestMessage?.RequestUri?.Query);
         var repeatedUser = await client.GetFromJsonAsync<CurrentUserResponse>($"{ApiRoutes.Auth}/me");
         Assert.Equal(firstUser.Id, repeatedUser?.Id);
     }
