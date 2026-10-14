@@ -126,6 +126,7 @@ public static class BackendSmoke
         var variantsPath = (await variants.GetAttributeAsync("href"))!;
         var tripId = variantsPath.Split('/')[2];
         var comparisonPath = $"/trips/{tripId}/comparison";
+        await CheckMenuClicks(page);
         await CheckResponsiveScreen(page, "trips", evidence);
         await variants.ClickAsync();
         await Expect(page.Locator("h1")).ToHaveTextAsync("Варианты поездки");
@@ -252,6 +253,42 @@ public static class BackendSmoke
         await page.ReloadAsync();
         await Expect(page.Locator("#trip-select")).ToHaveValueAsync(tripId);
         await Expect(page.Locator(".variant-card")).ToHaveCountAsync(3);
+    }
+
+    private static async Task CheckMenuClicks(IPage page)
+    {
+        var menu = page.GetByRole(AriaRole.Navigation, new()
+        {
+            Name = "Экраны планирования",
+            Exact = true
+        });
+        foreach (var width in new[] { 360, 768, 1440 })
+        {
+            await page.SetViewportSizeAsync(width, 1000);
+            foreach (var (label, heading) in new[]
+            {
+                ("2. Варианты поездки", "Варианты поездки"),
+                ("3. Сравнение", "Сравнение"),
+                ("1. Мои поездки", "Мои поездки"),
+                ("3. Сравнение", "Сравнение"),
+                ("2. Варианты поездки", "Варианты поездки"),
+                ("1. Мои поездки", "Мои поездки")
+            })
+            {
+                await menu.GetByRole(AriaRole.Link, new()
+                {
+                    Name = label,
+                    Exact = true
+                }).ClickAsync();
+                await Expect(page.Locator("h1")).ToHaveTextAsync(heading);
+                await Expect(menu.Locator("a[aria-current='page']")).ToHaveTextAsync(label);
+                if (heading == "Мои поездки")
+                    await Expect(page.Locator(".trip-card")).ToHaveCountAsync(1);
+                else
+                    await Expect(page.Locator(".variant-card")).ToHaveCountAsync(3);
+                Console.WriteLine($"PASS menu click: {width}px, {label}");
+            }
+        }
     }
 
     private static async Task CheckResponsiveScreen(IPage page, string screen, string evidence, bool navigation = true)

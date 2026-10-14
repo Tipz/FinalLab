@@ -30,6 +30,7 @@ public partial class TripWorkspace
     private Workspace data = new();
     private Guid? currentId;
     private Trip? Current => data.Trips.FirstOrDefault(t => t.Id == currentId);
+    private Trip? NavigationTrip => Current ?? data.Trips.MinBy(t => t.CreatedAt);
     private bool HasExample => data.Trips.Any(t => t.Name == ExampleData.TripName);
     private bool loading = true, readFailed, busy, conflict;
     private bool legacyAvailable, legacyReadFailed;

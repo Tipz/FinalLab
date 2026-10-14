@@ -50,6 +50,9 @@ public sealed class ScreenNavigationTests : BunitContext, IAsyncLifetime
         cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".trip-card").Count));
         Assert.Equal("Мои поездки", cut.Find("h1").TextContent);
         Assert.Empty(cut.FindAll(".variant-card,table"));
+        Assert.Equal(3, cut.FindAll("nav a").Count);
+        Assert.Equal($"/trips/{workspace.Trips[0].Id}/variants", cut.FindAll("nav a")[1].GetAttribute("href"));
+        Assert.Equal($"/trips/{workspace.Trips[0].Id}/comparison", cut.FindAll("nav a")[2].GetAttribute("href"));
 
         var trip = workspace.Trips[1];
         await cut.InvokeAsync(() => navigation.NavigateTo($"/trips/{trip.Id}/variants"));

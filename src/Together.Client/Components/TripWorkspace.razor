@@ -6,10 +6,10 @@
     <aside class="sidebar"><div class="eyebrow">Планирование</div>
         <nav aria-label="Экраны планирования">
             <a href="/" aria-current="@(IsTripList ? "page" : null)">1. Мои поездки</a>
-            @if (Current is not null)
+            @if (NavigationTrip is Trip navigationTrip)
             {
-                <a href="@VariantsUrl(Current.Id)" aria-current="@(!IsTripList && !IsComparison ? "page" : null)">2. Варианты поездки</a>
-                <a href="@ComparisonUrl(Current.Id)" aria-current="@(IsComparison ? "page" : null)">3. Сравнение</a>
+                <a href="@VariantsUrl(navigationTrip.Id)" aria-current="@(!IsTripList && !IsComparison ? "page" : null)">2. Варианты поездки</a>
+                <a href="@ComparisonUrl(navigationTrip.Id)" aria-current="@(IsComparison ? "page" : null)">3. Сравнение</a>
             }
             else
             {
