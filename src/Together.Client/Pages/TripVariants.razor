@@ -1,0 +1,6 @@
+@page "/trips/{TripId:guid}/variants"
+<TripWorkspace TripId="TripId" />
+
+@code {
+    [Parameter] public Guid TripId { get; set; }
+}

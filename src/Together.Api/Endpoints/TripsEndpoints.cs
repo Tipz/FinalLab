@@ -223,14 +223,33 @@ public static class TripsEndpoints
         if (errors.Count > 0)
             return Results.ValidationProblem(errors);
 
-        db.SelectedVariants.RemoveRange(trip.SelectedVariants);
-        db.SelectedCriteria.RemoveRange(trip.SelectedCriteria);
-        for (var i = 0; i < request.SelectedVariantIds.Length; i++)
-            trip.SelectedVariants.Add(new SelectedVariantEntity { VariantId = request.SelectedVariantIds[i], Position = i });
-        for (var i = 0; i < request.SelectedCriteria.Length; i++)
-            trip.SelectedCriteria.Add(new SelectedCriterionEntity { Criterion = request.SelectedCriteria[i], Position = i });
-        Touch(trip);
-        return await SaveTrip(db, trip, cancellationToken);
+        await using var transaction = db.Database.IsRelational()
+            ? await db.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        try
+        {
+            // Release the unique positions before inserting the replacement lists.
+            // The transaction keeps the deletion, revision check and replacement atomic.
+            db.SelectedVariants.RemoveRange(trip.SelectedVariants);
+            db.SelectedCriteria.RemoveRange(trip.SelectedCriteria);
+            trip.SelectedVariants.Clear();
+            trip.SelectedCriteria.Clear();
+            Touch(trip);
+            await db.SaveChangesAsync(cancellationToken);
+
+            for (var i = 0; i < request.SelectedVariantIds.Length; i++)
+                trip.SelectedVariants.Add(new SelectedVariantEntity { VariantId = request.SelectedVariantIds[i], Position = i });
+            for (var i = 0; i < request.SelectedCriteria.Length; i++)
+                trip.SelectedCriteria.Add(new SelectedCriterionEntity { Criterion = request.SelectedCriteria[i], Position = i });
+            await db.SaveChangesAsync(cancellationToken);
+            if (transaction is not null)
+                await transaction.CommitAsync(cancellationToken);
+            return Results.Ok(ToResponse(trip));
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict();
+        }
     }
 
     private static IQueryable<TripEntity> Graph(ApplicationDbContext db) => db.Trips

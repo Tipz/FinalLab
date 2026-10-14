@@ -20,7 +20,7 @@ if (args.Contains("--startup"))
 }
 if (args.Contains("--backend-smoke"))
 {
-    return await BackendSmoke.RunAsync(playwright, baseUrl, evidence);
+    return await BackendSmoke.RunAsync(playwright, baseUrl, evidence, args.Contains("--headed"));
 }
 if (args.Contains("--hot-reload"))
 {

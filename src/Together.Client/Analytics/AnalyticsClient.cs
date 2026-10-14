@@ -88,14 +88,20 @@ public sealed class AnalyticsClient(IJSRuntime js, AuthClient auth, NavigationMa
 
     public static string SanitizePath(string uri)
     {
+        string clean;
         if (Uri.TryCreate(uri, UriKind.Absolute, out var absolute)
             && (absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeHttps))
-            return string.IsNullOrEmpty(absolute.AbsolutePath) ? "/" : absolute.AbsolutePath;
-
-        var clean = uri.Split('?', '#')[0];
+            clean = absolute.AbsolutePath;
+        else
+            clean = uri.Split('?', '#')[0];
         if (string.IsNullOrEmpty(clean))
             return "/";
-        return clean.StartsWith('/') ? clean : $"/{clean}";
+        clean = clean.StartsWith('/') ? clean : $"/{clean}";
+        var segments = clean.Trim('/').Split('/');
+        if (segments.Length == 3 && segments[0] == "trips" && Guid.TryParse(segments[1], out _)
+            && segments[2] is "variants" or "comparison")
+            return $"/trips/{segments[2]}";
+        return clean;
     }
 
     private async Task TrackGoalAsync(string goal, string? value)

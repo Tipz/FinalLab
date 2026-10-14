@@ -68,6 +68,48 @@ public sealed class TripsApiTests(TogetherApiFactory factory) : IClassFixture<To
     }
 
     [Fact]
+    public async Task Comparison_CanReplaceReorderAndClearCriteria_WithoutLosingRevisionProtection()
+    {
+        using var client = factory.CreateClient();
+        await RegisterAndLogin(client, $"comparison-{Guid.NewGuid():N}@example.test");
+        using var createdResponse = await SendWithAntiforgery(client, HttpMethod.Post, ApiRoutes.Trips, new TripWriteRequest
+        {
+            Name = "Вымышленная поездка для сравнения",
+            StartDate = new(2027, 7, 1),
+            EndDate = new(2027, 7, 8),
+            Adults = 2,
+            ChildAges = [4]
+        });
+        Assert.Equal(HttpStatusCode.Created, createdResponse.StatusCode);
+        var created = (await createdResponse.Content.ReadFromJsonAsync<TripResponse>())!;
+        var current = created;
+        string[][] criteriaSets = [["travel", "kitchen"], ["kitchen", "budget", "distance"], [], Together.Core.Catalog.Criteria];
+        foreach (var criteria in criteriaSets)
+        {
+            using var response = await SendWithAntiforgery(client, HttpMethod.Put, $"{ApiRoutes.Trips}/{created.Id}/comparison", new ComparisonWriteRequest
+            {
+                ExpectedRevision = current.Revision,
+                SelectedCriteria = criteria
+            });
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var updated = (await response.Content.ReadFromJsonAsync<TripResponse>())!;
+            Assert.Equal(current.Revision + 1, updated.Revision);
+            Assert.Equal(criteria, updated.SelectedCriteria);
+            current = (await client.GetFromJsonAsync<TripResponse>($"{ApiRoutes.Trips}/{created.Id}"))!;
+            Assert.Equal(criteria, current.SelectedCriteria);
+        }
+        using var stale = await SendWithAntiforgery(client, HttpMethod.Put, $"{ApiRoutes.Trips}/{created.Id}/comparison", new ComparisonWriteRequest
+        {
+            ExpectedRevision = created.Revision,
+            SelectedCriteria = []
+        });
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        var saved = (await client.GetFromJsonAsync<TripResponse>($"{ApiRoutes.Trips}/{created.Id}"))!;
+        Assert.Equal(current.Revision, saved.Revision);
+        Assert.Equal(current.SelectedCriteria, saved.SelectedCriteria);
+    }
+
+    [Fact]
     public async Task InvalidTrip_ReturnsValidationProblem()
     {
         using var client = factory.CreateClient();

@@ -10,7 +10,7 @@
     @if (Trip.SelectedCriteria.Count == 0) { <p class="empty-inline">Выберите хотя бы один критерий</p> }
     @if (Selected.Count < 2)
     {
-        <div class="empty-inline"><p>Выберите минимум два варианта</p><div class="actions"><MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Primary" OnClick="AddVariant" Disabled="Busy">Добавить вариант</MudButton><a href="#options" class="action-link">Выбрать из карточек ↓</a></div></div>
+        <div class="empty-inline"><p>Выберите минимум два варианта</p><div class="actions"><MudButton Variant="MudBlazor.Variant.Outlined" Color="Color.Primary" OnClick="AddVariant" Disabled="Busy">Добавить вариант</MudButton><MudButton Href="@VariantsHref" Color="Color.Primary" Disabled="Busy">Выбрать из карточек</MudButton></div></div>
     }
     else if (Trip.SelectedCriteria.Count > 0)
     {
@@ -35,6 +35,7 @@
     [Parameter] public bool Busy { get; set; }
     [Parameter] public EventCallback<string> ToggleCriterion { get; set; }
     [Parameter] public EventCallback AddVariant { get; set; }
+    [Parameter] public string VariantsHref { get; set; } = "#options";
     private List<Together.Core.Variant> Selected { get; set; } = [];
     protected override void OnParametersSet()
     {

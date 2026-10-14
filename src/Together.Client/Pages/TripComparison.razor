@@ -1,0 +1,6 @@
+@page "/trips/{TripId:guid}/comparison"
+<TripWorkspace TripId="TripId" IsComparison="true" />
+
+@code {
+    [Parameter] public Guid TripId { get; set; }
+}

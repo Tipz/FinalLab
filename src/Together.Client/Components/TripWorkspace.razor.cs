@@ -1,15 +1,26 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using Together.Client.Storage;
 using Together.Client.Analytics;
 using Together.Core;
 using TripVariant = Together.Core.Variant;
 
-namespace Together.Client.Pages;
+namespace Together.Client.Components;
 
-public partial class Home
+public partial class TripWorkspace
 {
+    [Parameter]
+    public Guid? TripId
+    {
+        get; set;
+    }
+    [Parameter]
+    public bool IsComparison
+    {
+        get; set;
+    }
     [Inject] public ApiTripStore Store { get; set; } = default!;
     [Inject] public NavigationManager Navigation { get; set; } = default!;
     [Inject] public AuthClient Auth { get; set; } = default!;
@@ -29,6 +40,39 @@ public partial class Home
     private string? initialFocusField;
     private int comparisonKey;
     private Func<Task>? retry;
+    private bool redirectingToLogin;
+    private bool IsTripList => TripId is null;
+    private string ScreenTitle => IsTripList ? "Мои поездки" : IsComparison ? "Сравнение" : "Варианты поездки";
+    private static string VariantsUrl(Guid id) => $"/trips/{id}/variants";
+    private static string ComparisonUrl(Guid id) => $"/trips/{id}/comparison";
+
+    protected override void OnParametersSet()
+    {
+        currentId = TripId;
+        error = null;
+        success = null;
+        retry = null;
+        conflict = false;
+    }
+
+    private async Task BeforeNavigate(LocationChangingContext context)
+    {
+        if (redirectingToLogin)
+            return;
+        if (busy || (editor is not null && !await Js.InvokeAsync<bool>("confirm", "Перейти на другой экран и отбросить несохранённые правки?")))
+        {
+            context.PreventNavigation();
+            return;
+        }
+        if (editor is not null)
+            await CloseEditor();
+    }
+
+    private void RedirectToLogin()
+    {
+        redirectingToLogin = true;
+        Navigation.NavigateTo("/login");
+    }
 
     protected override Task OnInitializedAsync() => Load();
     private async Task Load()
@@ -49,15 +93,14 @@ public partial class Home
             {
                 legacyReadFailed = true;
             }
-            if (loaded.Trips.Count == 0 && !legacyAvailable)
+            if (loaded.Trips.Count == 0 && !legacyAvailable && IsTripList)
                 loaded = await AddExampleData(loaded);
             data = loaded;
-            if (!data.Trips.Any(t => t.Id == currentId))
-                currentId = data.Trips.FirstOrDefault()?.Id;
+            currentId = TripId;
         }
         catch (AuthenticationRequiredException)
         {
-            Navigation.NavigateTo("/login");
+            RedirectToLogin();
         }
         catch (Exception ex) when (ex is JSException or JsonException or InvalidOperationException or HttpRequestException)
         {
@@ -78,10 +121,8 @@ public partial class Home
     }
     private void SwitchTrip(ChangeEventArgs e)
     {
-        currentId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
-        error = null;
-        success = null;
-        retry = null;
+        if (Guid.TryParse(e.Value?.ToString(), out var id))
+            Navigation.NavigateTo(IsComparison ? ComparisonUrl(id) : VariantsUrl(id));
     }
     private void StartEditor(string type)
     {
@@ -101,6 +142,11 @@ public partial class Home
         editingTrip = Current;
         StartEditor("trip");
     }
+    private void EditListedTrip(Trip trip)
+    {
+        editingTrip = trip;
+        StartEditor("trip");
+    }
     private async Task AddExample()
     {
         if (HasExample)
@@ -110,8 +156,8 @@ public partial class Home
         retry = AddExample;
         if (await Commit(next => next.Trips.Add(trip), trip.Id))
         {
-            currentId = trip.Id;
             success = "Пример добавлен";
+            Navigation.NavigateTo(VariantsUrl(trip.Id));
         }
     }
     private void NewVariant()
@@ -175,7 +221,7 @@ public partial class Home
         }
         catch (AuthenticationRequiredException)
         {
-            Navigation.NavigateTo("/login");
+            RedirectToLogin();
             return false;
         }
         catch (Exception ex) when (ex is JSException or JsonException or InvalidOperationException or HttpRequestException)
@@ -203,10 +249,12 @@ public partial class Home
             draft.Apply(trip);
         }, id))
         {
-            currentId = id;
             await CloseEditor();
             if (created)
+            {
+                Navigation.NavigateTo(VariantsUrl(id));
                 await Analytics.TripCreatedAsync();
+            }
         }
     }
     private async Task SaveVariant(VariantDraft draft)
@@ -214,6 +262,7 @@ public partial class Home
         if (draft.Validate().Count > 0)
             return;
         var tripId = Current!.Id;
+        var created = editingVariant is null;
         var variantId = editingVariant?.Id ?? Guid.NewGuid();
         retry = () => SaveVariant(draft);
         if (await Commit(next =>
@@ -227,7 +276,11 @@ public partial class Home
             }
             draft.Apply(variant);
         }, tripId))
+        {
             await CloseEditor();
+            if (created && IsComparison)
+                Navigation.NavigateTo(VariantsUrl(tripId));
+        }
     }
     private async Task DeleteVariant(Guid id)
     {
@@ -291,7 +344,6 @@ public partial class Home
                 data = next;
             }
             legacyAvailable = false;
-            currentId ??= data.Trips.FirstOrDefault()?.Id;
             success = "Локальные поездки импортированы. Исходная копия оставлена в браузере.";
         }
         catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException)
@@ -323,12 +375,11 @@ public partial class Home
             success = null;
             conflict = false;
             retry = null;
-            if (!data.Trips.Any(t => t.Id == currentId))
-                currentId = data.Trips.FirstOrDefault()?.Id;
+            currentId = TripId;
         }
         catch (AuthenticationRequiredException)
         {
-            Navigation.NavigateTo("/login");
+            RedirectToLogin();
         }
         catch (Exception ex) when (ex is JSException or JsonException or InvalidOperationException or HttpRequestException)
         {

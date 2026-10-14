@@ -1,0 +1,105 @@
+<PageTitle>@ScreenTitle — Вместе в путь</PageTitle>
+<NavigationLock OnBeforeInternalNavigation="BeforeNavigate" ConfirmExternalNavigation="@(editor is not null)" />
+<a class="skip-link" href="#main">К содержимому</a>
+<div class="shell">
+    <header><a href="./" class="brand" aria-label="Вместе в путь, главная">вместе<span> / </span>в путь</a><span class="header-note">Семейный планировщик<br />Данные введены вручную</span><MudButton OnClick="Logout" Variant="MudBlazor.Variant.Text">Выйти</MudButton></header>
+    <aside class="sidebar"><div class="eyebrow">Мой план</div>
+        <nav aria-label="Экраны планирования">
+            <a href="/" aria-current="@(IsTripList ? "page" : null)">1. Мои поездки</a>
+            @if (Current is not null)
+            {
+                <a href="@VariantsUrl(Current.Id)" aria-current="@(!IsTripList && !IsComparison ? "page" : null)">2. Варианты поездки</a>
+                <a href="@ComparisonUrl(Current.Id)" aria-current="@(IsComparison ? "page" : null)">3. Сравнение</a>
+            }
+            else
+            {
+                <span aria-disabled="true">2. Варианты поездки</span>
+                <span aria-disabled="true">3. Сравнение</span>
+            }
+        </nav>
+        <p class="note">Важные детали.<br />Обдуманный выбор.<br />Всё в одном месте.</p>
+    </aside>
+    <main id="main">
+        <section class="intro"><div class="eyebrow">@(Current?.Name ?? "Семейный планировщик")</div><h1 tabindex="-1">@ScreenTitle</h1><p>@(IsTripList ? "Создайте поездку или откройте сохранённую, чтобы продолжить планирование." : IsComparison ? "Сравните выбранные варианты по бюджету, дороге и семейным удобствам." : "Соберите предложения, уточните расходы и отметьте варианты для сравнения.")</p></section>
+        @if (loading)
+        { <div class="panel empty" role="status"><MudProgressCircular Indeterminate Color="Color.Primary" Size="Size.Medium" /><p>Загружаем поездки…</p></div> }
+        else if (readFailed)
+        { <div class="panel empty"><MudAlert Severity="Severity.Error">Не удалось прочитать данные. Хранилище недоступно, повреждено или имеет несовместимую версию. Исходные данные не изменены.</MudAlert><MudButton OnClick="Load" Color="Color.Primary">Повторить</MudButton></div> }
+        else
+        {
+            @if (legacyAvailable) { <MudAlert Severity="Severity.Info">Найдены поездки из локальной версии ДЗ № 4. Они не отправлены на сервер.<MudButton OnClick="ImportLegacy" Disabled="busy">Импортировать</MudButton></MudAlert> }
+            @if (legacyReadFailed) { <MudAlert Severity="Severity.Warning">Локальное хранилище ДЗ № 4 не удалось прочитать. Оно не очищено и не изменено.</MudAlert> }
+            <div class="feedback" role="status" aria-live="polite">@(busy ? "Сохраняем…" : success)</div>
+            @if (error is not null && editor is null) { @StorageError }
+            @if (IsTripList)
+            {
+                <section aria-labelledby="trips-title">
+                    <div class="section-head"><h2 id="trips-title">Ваши поездки <span class="count">@data.Trips.Count</span></h2><div class="actions"><MudButton OnClick="NewTrip" Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Disabled="busy">Новая поездка</MudButton>@if (!HasExample) { <MudButton OnClick="AddExample" Color="Color.Secondary" Disabled="busy">Добавить пример</MudButton> }</div></div>
+                    @if (data.Trips.Count == 0)
+                    { <div class="panel empty first-trip"><h3>Создайте первую поездку</h3><p>Задайте даты и состав семьи, затем добавьте варианты для сравнения.</p><MudButton OnClick="NewTrip" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Disabled="busy">Создать поездку</MudButton></div> }
+                    else
+                    {
+                        <div class="cards trip-list">
+                            @foreach (var trip in data.Trips.OrderBy(t => t.CreatedAt))
+                            {
+                                <article class="panel trip-card" aria-label="@trip.Name">
+                                    <h3>@trip.Name</h3>
+                                    <p>@trip.StartDate.ToString("dd.MM.yyyy") — @trip.EndDate.ToString("dd.MM.yyyy")</p>
+                                    <p class="note">Ночей: @trip.Nights · Взрослых: @trip.Adults · Детей: @trip.ChildAges.Length</p>
+                                    <p>Вариантов: @trip.Variants.Count · Выбрано: @trip.SelectedVariantIds.Count</p>
+                                    <div class="actions"><MudButton Href="@VariantsUrl(trip.Id)" Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Disabled="busy">Открыть варианты</MudButton><MudButton Href="@ComparisonUrl(trip.Id)" Color="Color.Primary" Disabled="busy">Сравнение</MudButton><MudButton OnClick="() => EditListedTrip(trip)" Disabled="busy">Параметры поездки</MudButton></div>
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+            else if (Current is not null)
+            {
+                <fieldset class="workspace-fields" disabled="@busy">
+                <section class="trip-toolbar" aria-label="Параметры поездки">
+                    <div class="trip-switch"><label for="trip-select">Моя поездка</label><select id="trip-select" value="@currentId" @onchange="SwitchTrip" disabled="@busy">@foreach (var t in data.Trips) { <option value="@t.Id">@t.Name</option> }</select></div>
+                    <div class="actions"><MudButton Href="/" Color="Color.Primary" Disabled="busy">Все поездки</MudButton><MudButton OnClick="EditTrip" Color="Color.Primary" Disabled="busy">Параметры поездки</MudButton></div>
+                </section>
+                <div class="trip-meta"><span>@Current.StartDate.ToString("dd.MM.yyyy") — @Current.EndDate.ToString("dd.MM.yyyy")</span><span>Ночей: @Current.Nights</span><span>Взрослых: @Current.Adults · детей: @Current.ChildAges.Length</span><span>Возраст детей: @string.Join(", ", Current.ChildAges)</span></div>
+                <p class="trip-budget-settings">Лимит бюджета: @(Current.BudgetLimitKopecks is long limit ? Budget.Money(limit) : "не задан") · Резерв: @Current.ReservePercent%</p>
+                @if (IsComparison)
+                {
+                    <Comparison @key="comparisonKey" Trip="Current" Busy="busy" ToggleCriterion="ToggleCriterion" AddVariant="NewVariant" VariantsHref="@VariantsUrl(Current.Id)" />
+                    <div class="actions screen-actions"><MudButton Href="@VariantsUrl(Current.Id)" Variant="MudBlazor.Variant.Outlined" Color="Color.Primary" Disabled="busy">К вариантам поездки</MudButton></div>
+                }
+                else
+                {
+                    <div class="panel comparison-start"><p>Выбрано для сравнения: @Current.SelectedVariantIds.Count. Отметьте минимум два варианта.</p><MudButton Href="@ComparisonUrl(Current.Id)" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Disabled="busy">Перейти к сравнению</MudButton></div>
+                }
+                <section id="options" aria-labelledby="options-title">
+                    <div class="section-head"><div><div class="eyebrow">@(IsComparison ? "Детали выбранных предложений" : "Собираем идеи")</div><h2 id="options-title">@(IsComparison ? "Выбранные варианты" : "Ваши варианты") <span class="count">@(IsComparison ? Current.SelectedVariantIds.Count : Current.Variants.Count)</span></h2></div>@if (!IsComparison) { <MudButton OnClick="NewVariant" Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Disabled="busy">Добавить вариант</MudButton> }</div>
+                    @if (!IsComparison && Current.Variants.Count == 0) { <div class="panel empty"><h3>Пока нет вариантов</h3><p>Добавьте найденное жильё и направление. Расходы и удобства можно уточнить позже.</p></div> }
+                    else { <div class="cards">@foreach (var v in Current.Variants.Where(v => !IsComparison || Current.SelectedVariantIds.Contains(v.Id)).OrderBy(v => v.CreatedAt)) { <VariantCard @key="(v.Id, comparisonKey)" Variant="v" Selected="Current.SelectedVariantIds.Contains(v.Id)" Busy="busy" BudgetLimitKopecks="Current.BudgetLimitKopecks" ReservePercent="Current.ReservePercent" SelectedCriteria="Current.SelectedCriteria" Clarify="ClarifyVariant" Toggle="ToggleVariant" Edit="EditVariant" Delete="DeleteVariant" /> }</div> }
+                </section>
+                </fieldset>
+            }
+            else
+            { <section class="panel empty"><h2>Поездка недоступна</h2><p>Она не найдена среди ваших поездок. Откройте список и выберите доступную поездку.</p><MudButton Href="/" Color="Color.Primary">Мои поездки</MudButton></section> }
+        }
+        <footer id="help"><strong>Планируйте вместе, выбирайте сами.</strong><p>@Catalog.LocalNotice.</p><details><summary>Как пользоваться</summary><p>На экране «Мои поездки» создайте или откройте поездку. В «Вариантах поездки» добавьте предложения, заполните расходы и отметьте «Сравнить» у двух или более карточек. Перейдите на экран «Сравнение» и выберите критерии. Все суммы вводятся в рублях за семью за весь период. Цены не обновляются автоматически.</p><p>Поездки доступны после входа в вашу учётную запись, в том числе с другого устройства.</p></details></footer>
+    </main>
+</div>
+@if (editor == "trip")
+{
+    <TripEditor Original="editingTrip" Busy="busy" OnSave="SaveTrip" OnClose="CloseEditor"><ErrorContent>@StorageError</ErrorContent></TripEditor>
+}
+@if (editor == "variant")
+{
+    <VariantEditor Original="editingVariant" Busy="busy" BudgetLimitKopecks="Current?.BudgetLimitKopecks" ReservePercent="@(Current?.ReservePercent ?? 0)" InitialFocusField="@initialFocusField" OnSave="SaveVariant" OnClose="CloseEditor"><ErrorContent>@StorageError</ErrorContent></VariantEditor>
+}
+@code {
+    private RenderFragment StorageError => @<div>
+        @if (error is not null)
+        {
+            <MudAlert Severity="Severity.Error">@error</MudAlert>
+            @if (conflict) { <MudButton OnClick="ReloadCurrent" Color="Color.Primary" Disabled="busy">Загрузить актуальные данные</MudButton> }
+            else if (retry is not null) { <MudButton OnClick="Retry" Color="Color.Primary" Disabled="busy">Повторить</MudButton> }
+        }
+    </div>;
+}
