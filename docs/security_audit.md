@@ -7,6 +7,14 @@
 Документ различает автоматизированные результаты, подтверждение владельцем на
 локальном стенде и проверки, не воспроизводимые из публичного репозитория.
 
+Актуализация 14.10.2026: приложение доступно по публичному
+[HTTPS-адресу](https://together.2-26-49-210.sslip.io/).
+Автоматическое развёртывание выполняется через GitHub Actions и Komodo/Renovate.
+Датированные findings ниже сохраняют контекст сентябрьского аудита.
+Выпуск и проверки описаны в [документации развёртывания](manual_production_deployment.md),
+последующее исправление — в [отчёте OAuth](yandex_oauth_configuration_fix.md).
+Полный OAuth-вход с реальным аккаунтом после обновления не подтверждён.
+
 ## 1. Область аудита
 
 Изучены:
@@ -24,7 +32,7 @@
 Границы аудита:
 
 - DAST и penetration testing не выполнялись;
-- конфигурация существующих Traefik и локальной PKI не хранится в репозитории;
+- конфигурация production-окружения не хранится в репозитории;
 - реальные production logs не передавались AI и не публиковались;
 - Dependency Review выполняется только для pull request и не запускался в
   последнем push run.
@@ -133,8 +141,8 @@ Findings сопоставлены с кодом; исправления подт
   завершиться, даже если отдельный CI workflow упал. Дополнительно они слушают
   `master`, тогда как рабочая ветка называется `main`.
 - **Исправление:** один workflow связывает quality → build/tests → backend smoke →
-  publish → smoke опубликованного digest. Инфраструктурно-зависимый production
-  deploy выполняется отдельно и вручную.
+  publish → smoke опубликованного digest. Автоматическое production-развёртывание
+  обеспечивают Komodo/Renovate.
 - **Проверка исправления:** [успешный GitHub Actions run](https://github.com/Tipz/HT6/actions/runs/35828731866)
   подтверждает обязательную последовательность до опубликованного image.
 
@@ -147,9 +155,8 @@ Findings сопоставлены с кодом; исправления подт
   конфигурации в репозитории нет. Не подтверждены forwarded headers, HSTS, CSP и
   другие response headers.
 - **Исправление:** HSTS/security headers/CSP добавлены; forwarded headers включаются
-  только для явно заданных `KnownProxies`. Владелец подтвердил HTTPS и OAuth за
-  существующим Traefik и локальной PKI на `192.168.1.26`.
-- **Остаточная проверка:** конфигурация Traefik/PKI и снимок production response
+  только для явно заданных `KnownProxies`. Владелец подтвердил HTTPS и OAuth.
+- **Остаточная проверка:** конфигурация окружения и снимок production response
   headers не входят в репозиторий; их нужно проверять на целевом хосте.
 
 ### SA-08 — Глобальный auth rate limit может стать причиной отказа в обслуживании
@@ -203,9 +210,10 @@ flow через backend; OAuth token не передаётся в Blazor bundle 
 логи. Запрашивается только `login:email`; устойчивый `id` входит в стандартный
 ответ API Яндекс ID. Для тестирования и production используются разные OAuth
 приложения.
-Scheme, host, port и path Redirect URI соответствуют локальному HTTPS URL стенда
-на `192.168.1.26` и настройкам OAuth-приложения. Для другого окружения требуется
-новая конфигурация URL и Redirect URI.
+Redirect URI публичного сайта:
+`https://together.2-26-49-210.sslip.io/signin-yandex`.
+Scheme, host, port и path должны совпадать с настройками OAuth-приложения.
+Для другого окружения требуется новая конфигурация URL и Redirect URI.
 
 Следующие риски должны быть закрыты дизайном:
 
@@ -255,8 +263,7 @@ dotnet package list --project Together.slnx --include-transitive --vulnerable
 - проверка JSON-логов на секреты и персональные данные;
 - ручной OWASP Top 10 checklist.
 
-Production TLS работает на локальном стенде за существующим Traefik и локальной
-PKI по подтверждению владельца. Конфигурация proxy и воспроизводимый снимок всех
+Production TLS подтверждён владельцем. Конфигурация окружения и воспроизводимый снимок всех
 response headers в репозиторий не включены.
 
 ## 7. Использование AI в аудите
@@ -289,7 +296,7 @@ AI-сервисам.
 | OWASP manual review | 2026-09-20 | Completed locally | Раздел 3, SA-01–SA-09 |
 | Antiforgery tests | 2026-09-20 | Passed | `Together.Api.Tests`, missing/invalid/valid token |
 | OAuth security tests | 2026-09-20 | Passed with fake scheme | success/cancel/repeat/email conflict/open redirect/password login |
-| Production TLS/OAuth | 2026-09-23 | Подтверждено владельцем локального стенда | Traefik и локальная PKI на `192.168.1.26`; конфигурация внешняя |
+| Production TLS/OAuth | 2026-09-23 | Подтверждено владельцем | Конфигурация окружения управляется отдельно |
 | Compose/Chromium smoke | 2026-09-23 | Passed | [GitHub Actions job](https://github.com/Tipz/HT6/actions/runs/35828731866) |
 | Log privacy review | 2026-09-20 | Passed on synthetic/local sample | `GET /health?forbidden-marker`: JSON `Together.Request` contained only `/health`; `docs/log_analysis.md`; production logs were not used |
 
@@ -300,7 +307,7 @@ AI-сервисам.
 - Medium findings имеют исправление, срок или обоснование.
 - Dependency и SAST checks встроены в CI.
 - CSRF, OAuth, ownership и open redirect покрыты тестами.
-- Production TLS/OAuth проверены владельцем на фактическом локальном URL;
+- Production TLS/OAuth проверены владельцем;
   proxy-конфигурация остаётся внешней по отношению к репозиторию.
 - Логи и аналитика не содержат запрещённых данных.
 - Реестр результатов содержит реальные даты, команды и ссылки на evidence.

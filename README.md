@@ -7,6 +7,8 @@
 сравнивать варианты размещения и направлений, рассчитывать бюджет и хранить
 данные в своей учётной записи.
 
+Публичный сайт: **[together.2-26-49-210.sslip.io](https://together.2-26-49-210.sslip.io/)**.
+
 Текущая версия выполнена в рамках домашнего задания № 6. К приложению добавлены
 CI/CD, аудит безопасности, OAuth 2.0 через Яндекс ID, Яндекс Метрика с явным
 согласием, health checks и структурированные JSON-логи. Вход по email и паролю
@@ -15,7 +17,7 @@ CI/CD, аудит безопасности, OAuth 2.0 через Яндекс ID
 
 ![Основной экран приложения с вымышленными данными](docs/evidence/chromium-1440.png)
 
-Документация актуализирована 12.10.2026: [индекс](docs/README.md), [оставшиеся работы](docs/IMPLEMENTATION_PLAN.md), [исторический журнал](docs/history/README.md). Бюджетное дополнение реализовано и локально проверено; его production-выпуск не подтверждён.
+Документация актуализирована 14.10.2026: [индекс](docs/README.md), [оставшиеся работы](docs/IMPLEMENTATION_PLAN.md), [исторический журнал](docs/history/README.md). Бюджетное дополнение развёрнуто 13.10.2026; схема публичного доступа и проверки описаны в [отчёте о развёртывании](docs/manual_production_deployment.md).
 
 ## Возможности
 
@@ -148,11 +150,13 @@ Authentication__Yandex__ClientSecret
 использует Authorization Code Flow с PKCE, запрашивает только `login:email`, не
 передаёт access token в Blazor и не сохраняет его после входа.
 
-Интеграция проверена на локальном HTTPS-стенде. Production-стенд размещён в
-частной сети на машине `192.168.1.26`; TLS завершается существующим Traefik, а
-сертификаты выдаются локальным центром сертификации. При переносе в другую
-инфраструктуру необходимо настроить собственные DNS/URL, HTTPS reverse proxy,
-сертификат, Client ID, Client Secret и Redirect URI.
+Callback публичного сайта:
+`https://together.2-26-49-210.sslip.io/signin-yandex`.
+Исправление OAuth развёрнуто 13.10.2026;
+полный вход с реальным аккаунтом Яндекса после обновления требует проверки
+пользователем. Подробности: [отчёт OAuth](docs/yandex_oauth_configuration_fix.md).
+При переносе необходимо настроить собственные URL, HTTPS, Client ID,
+Client Secret и Redirect URI.
 
 ## Яндекс Метрика
 
@@ -221,14 +225,18 @@ ghcr.io/tipz/together
 Production deployment рекомендуется выполнять по неизменяемой ссылке
 `ghcr.io/tipz/together@sha256:...`.
 
-Автоматический deployment через защищённый self-hosted GitHub runner был
-подготовлен для локальной production-машины, но отключён в текущем универсальном
-workflow. Такой job зависит от конкретных runner labels, локального пути,
-приватной сети, reverse proxy и PKI. Текущая версия автоматически проверяет и
-публикует готовый образ, а его развёртывание выполняется вручную на целевом
-Docker-хосте.
+Автоматическое развёртывание обеспечивают GitHub Actions и Komodo/Renovate.
+GitHub Actions выполняет проверки и публикует образ в GHCR;
+Komodo/Renovate обеспечивают обновление образа и deployment приложения.
+Настройки Komodo/Renovate управляются вне этого репозитория.
 
 ## Production deployment готового образа
+
+Публичный стенд доступен по адресу
+[https://together.2-26-49-210.sslip.io/](https://together.2-26-49-210.sslip.io/).
+Автоматический выпуск через GitHub Actions и Komodo/Renovate описан в
+[документации развёртывания](docs/manual_production_deployment.md).
+Ниже приведены команды для самостоятельного запуска опубликованного GHCR-образа.
 
 Для развёртывания без исходников и локальной сборки используйте
 [`docker-compose.deploy.yml`](docker-compose.deploy.yml):
@@ -307,8 +315,7 @@ docker compose --env-file .env.deploy --file docker-compose.deploy.yml down
 - аудит NuGet-зависимостей и CodeQL;
 - JSON-логи в stdout с timestamp, level, category, Event ID и Trace ID;
 - ограничение размера Docker logs;
-- Docker health checks и контроль локального стенда средствами Docker и
-  Traefik.
+- Docker health checks и проверка готовности приложения.
 
 Отдельные документы:
 
@@ -368,12 +375,13 @@ Remove-Item Env:APP_URL
 - [Документация интеграций](docs/integration_documentation.md)
 - [Аудит безопасности](docs/security_audit.md)
 - [Backend и эксплуатация](backend_documentation.md)
+- [Публичный сайт и автоматическое развёртывание](docs/manual_production_deployment.md)
+- [Исправление и развёртывание Яндекс OAuth](docs/yandex_oauth_configuration_fix.md)
 - [Техническое задание](docs/technical_specification.md)
 - [Требования backend](docs/backend_requirements.md)
 - [Пользовательские истории](docs/user_stories.md)
 - [AI-анализ логов](docs/log_analysis.md)
 - [Шаблоны AI-промптов](docs/prompt_templates.md)
 
-Публичный HTTPS-стенд не предоставляется: учебный production-стенд работает в
-приватной локальной сети. Репозиторий и готовые multi-platform образы доступны
-через GitHub и GHCR.
+Приложение доступно по публичному HTTPS-адресу; репозиторий и опубликованные
+multi-platform образы доступны через GitHub и GHCR.

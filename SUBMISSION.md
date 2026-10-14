@@ -5,7 +5,11 @@ Identity, EF Core/Npgsql и PostgreSQL. В ДЗ № 6 добавлены CI/CD, 
 hardening, OAuth 2.0 через Яндекс ID, Яндекс Метрика с согласием, health checks и
 JSON-логирование.
 
-Состояние сдачи ДЗ № 6 зафиксировано 23 сентября 2026 года. Более позднее бюджетное дополнение от 12.10.2026 описано в [budget_planning.md](docs/budget_planning.md); результаты сдачи ниже не подтверждают его production-выпуск.
+Результаты сдачи ДЗ № 6 ниже зафиксированы 23 сентября 2026 года.
+Актуализация от 14.10.2026: [публичный сайт](https://together.2-26-49-210.sslip.io/)
+доступен по HTTPS; бюджетное дополнение и исправление OAuth развёрнуты
+13.10.2026. Октябрьские проверки описаны в [отчёте развёртывания](docs/manual_production_deployment.md)
+и [отчёте OAuth](docs/yandex_oauth_configuration_fix.md).
 
 ## Состав сдачи
 
@@ -13,11 +17,11 @@ JSON-логирование.
 | --- | --- |
 | CI/CD | `.github/workflows/ci.yml`: обязательный CodeQL → format/audit, build/tests и backend smoke → multi-platform publish → smoke опубликованного digest; актуальная ревизия от 12.10.2026 описана в [ci_revision.md](docs/ci_revision.md) |
 | Container | `ghcr.io/tipz/together` для `linux/amd64` и `linux/arm64` |
-| Deployment | Ручной запуск `docker-compose.deploy.yml` по immutable digest; отдельный `migrate`, persistent PostgreSQL и Data Protection |
+| Deployment | Автоматическое развёртывание через GitHub Actions и Komodo/Renovate; отдельный `migrate`, persistent PostgreSQL и Data Protection |
 | OAuth 2.0 | Backend Authorization Code Flow с PKCE через Яндекс ID; вход по паролю сохранён |
 | Аналитика | Opt-in Яндекс Метрика, очищенные SPA paths и две фиксированные цели |
 | Безопасность | Antiforgery, lockout/rate limit, CSP/security headers, ownership checks, pinned actions |
-| Monitoring | `/health`, `/health/ready`, Docker healthcheck и контроль локального стенда средствами Docker/Traefik |
+| Monitoring | `/health`, `/health/ready` и Docker healthcheck |
 | Логи | Однострочный JSON stdout с timestamp, level, category, Event ID и Trace ID |
 | AI | Генерация/проверка CI, OWASP review и анализ синтетического JSON-лога |
 
@@ -53,19 +57,18 @@ Dependency Review запускается только для pull request и п�
 
 ## Учебный production-стенд
 
-Стенд развёрнут в приватной локальной сети на машине `192.168.1.26`.
-Существующие Traefik и локальный центр сертификации предоставляют HTTPS.
-На этом стенде владельцем проекта проверены вход через Яндекс ID и работа
-настроенного счётчика Яндекс Метрики.
+Общедоступная ссылка: **[https://together.2-26-49-210.sslip.io/](https://together.2-26-49-210.sslip.io/)**.
+Автоматическое развёртывание выполняется через GitHub Actions и Komodo/Renovate.
+GitHub Actions проверяет и публикует образ; Komodo/Renovate обеспечивают
+его обновление и deployment приложения.
 
-Публичного IP и внешнего хостинга нет, поэтому общедоступная ссылка на приложение
-не предоставляется. Это инфраструктурное ограничение учебного стенда, а не
-ограничение Docker image.
+Ранее владельцем проверены Яндекс ID и Метрика.
+Публичный callback — `https://together.2-26-49-210.sslip.io/signin-yandex`.
+Полный вход с реальным аккаунтом после OAuth-исправления требует проверки
+пользователем; backend smoke проверяет регистрацию и вход по паролю.
 
-Production обновляется оператором через `docker-compose.deploy.yml`.
-Автоматический deploy job для защищённого self-hosted GitHub runner был
-подготовлен, но отключён в текущем универсальном workflow, поскольку зависел от
-локального пути, runner labels, приватной сети, Traefik и PKI.
+Миграции выполняются до запуска приложения отдельным одноразовым заданием;
+PostgreSQL и ключи Data Protection сохраняются между обновлениями.
 
 ## Перенос в другое окружение
 

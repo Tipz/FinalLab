@@ -3,7 +3,7 @@
 > **Исторический документ.** Разделы 1–5 описывают frontend-этап ДЗ № 4, а
 > разделы 6–8 — промпты, использованные при подготовке ДЗ № 6. Некоторые пункты
 > фиксируют первоначальный план автоматического deploy. Текущее состояние —
-> публикация образа в CI и ручное развёртывание готового digest — описано в
+> GitHub Actions и автоматическое развёртывание через Komodo/Renovate — описано в
 > [корневом README](../README.md); рабочие правила приведены в
 > [AGENTS.md](../AGENTS.md).
 
@@ -60,16 +60,14 @@ Home Services Dashboard заменён на standalone Blazor WebAssembly и Ind
 - **Role:** инженер CI/CD и supply-chain security.
 - **Task:** связать format/audit, Release build, xUnit, Compose/Chromium smoke,
   multi-arch publish по digest и production deploy.
-- **Context:** `main`, `ghcr.io/tipz/together`, защищённый self-hosted runner на
-  `192.168.1.26`; pull request не публикует и не выполняется на production runner.
+- **Context:** `main`, `ghcr.io/tipz/together`, GitHub Actions и Komodo/Renovate;
+  pull request выполняет проверки без публикации и production deployment.
 - **Format:** один dependency graph, минимальные permissions, actions по полным
   commit SHA и явное разделение автоматических, локальных и инфраструктурных
   проверок.
 
-Результат: publish зависит от `backend_smoke` и проверяет опубликованный
-`ghcr.io/tipz/together@sha256:...`. Инфраструктурно-зависимый deploy job для
-self-hosted runner был подготовлен, но отключён; production обновляется вручную
-через `docker-compose.deploy.yml`.
+Результат: CI проверяет и публикует `ghcr.io/tipz/together@sha256:...`;
+автоматическое обновление образа и deployment обеспечивают Komodo/Renovate.
 
 ## 7. OWASP review
 

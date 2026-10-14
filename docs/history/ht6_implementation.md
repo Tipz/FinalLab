@@ -41,13 +41,9 @@ Actions закреплены полными commit SHA. Publish job получа
 
 ### Deployment
 
-Учебный production-стенд находится на `192.168.1.26` в приватной сети.
-Существующие Traefik и локальный центр сертификации обеспечивают HTTPS.
-
-Автоматический deploy через защищённый self-hosted runner был подготовлен, но
-отключён в универсальном workflow, поскольку зависел от локального пути, runner
-labels, приватной сети, Traefik и PKI. Текущий deployment выполняется оператором
-через `docker-compose.deploy.yml` по immutable image digest.
+Актуальное описание развёртывания: [публичный сайт и deployment](../manual_production_deployment.md).
+Приложение доступно по публичному HTTPS-адресу; автоматическое развёртывание
+обеспечивают GitHub Actions и Komodo/Renovate.
 
 Миграции выполняются отдельным одноразовым контейнером. PostgreSQL и Data
 Protection keys сохраняются в volumes. Приложение работает от пользователя
@@ -92,8 +88,7 @@ state/correlation cookies.
 ### Monitoring и logging
 
 `/health` проверяет процесс, `/health/ready` — процесс и PostgreSQL. Dockerfile и
-Compose используют container healthcheck. Локальный стенд дополнительно
-контролируется существующей инфраструктурой Docker/Traefik.
+Compose используют container healthcheck.
 
 Логи выводятся однострочным JSON в stdout и содержат UTC timestamp, level,
 category, Event ID и TraceId/SpanId. Docker ограничивает размер файлов.
@@ -110,7 +105,7 @@ Production logs и пользовательские данные не перед
 7. Добавлены JSON logging, health checks и Docker log rotation.
 8. Расширены unit/component/API/browser tests.
 9. Проверен опубликованный multi-platform image.
-10. Учебный стенд развёрнут в приватной сети с существующими Traefik/PKI.
+10. Приложение развёрнуто с HTTPS и постоянным хранением данных.
 11. Документация синхронизирована с текущим кодом и эксплуатационной моделью.
 
 ## 4. Проверка результата
@@ -129,16 +124,17 @@ Production logs и пользовательские данные не перед
 успешно выполнил build/tests, CodeQL, Compose/Chromium backend smoke,
 multi-platform publish и smoke опубликованного digest.
 
-Владелец проекта подтвердил на локальном HTTPS-стенде:
+Владелец проекта подтвердил:
 
-- ручной deployment `docker-compose.deploy.yml`;
+- развёртывание приложения;
 - вход через Яндекс ID;
 - работу настроенного счётчика Яндекс Метрики.
 
 ## 5. Переносимость и границы
 
-Публичный IP и внешний хостинг отсутствуют. Репозиторий не содержит
-конфигурацию существующих Traefik и локальной PKI.
+Публичный URL и актуальный процесс выпуска описаны в
+[документации развёртывания](../manual_production_deployment.md).
+Конфигурация production-окружения управляется отдельно от репозитория.
 
 Для другого окружения требуются:
 
@@ -150,8 +146,7 @@ multi-platform publish и smoke опубликованного digest.
 - правила firewall, соответствующие выбранному `APP_BIND_ADDRESS`.
 
 DAST, penetration testing и централизованное хранилище логов не входят в
-репозиторий. Отдельный scheduled GitHub uptime workflow отсутствует, поскольку
-GitHub-hosted runner не видит приватный стенд.
+репозиторий. Отдельный scheduled GitHub uptime workflow отсутствует.
 
 ## 6. Связанные документы
 

@@ -11,9 +11,12 @@
 | 17.09.2026, ДЗ № 5 | Identity, API, PostgreSQL, контейнеризация; 32 Core/UI и 4 API-теста | [Backend-отчёт](../../backend_documentation.md#проверки), [отчёт разработки](../../development_report.md) |
 | 20–23.09.2026, ДЗ № 6 | CI/publish, Яндекс ID, opt-in Метрика, защита и JSON-логи; 36 Core/UI и 15 API-тестов | [Завершённый план](ht6_implementation.md), [отчёт ДЗ № 6](../homework_6_report.md), [сдача](../../SUBMISSION.md) |
 | 12.10.2026, бюджетное дополнение | US-14/US-15, миграция, лимит/резерв и уточнения; зафиксированы 58 Core/UI и 24 API-теста, PostgreSQL migration и Chromium backend smoke | [Команды, результаты и ограничения](budget_verification.md), [evidence](../evidence/budget-planning/backend-browser-results.json) |
+| 13.10.2026, публичный стенд | Выпуск бюджетного дополнения и последующее исправление OAuth; миграции и публичный backend smoke прошли | [Развёртывание](../manual_production_deployment.md), [исправление OAuth](../yandex_oauth_configuration_fix.md) |
+| 14.10.2026, актуализация документации | Публичный URL и способ deployment согласованы в действующих документах; Release, 58 Core/UI, 24 API-теста и публичный backend smoke прошли повторно | [Проверки актуализации](#актуализация-публичного-стенда-14102026) |
 
-Бюджетное дополнение проверено локально без Docker; его production-развёртывание
-не выполнялось. Успешный GitHub run сентября относится к предыдущей версии.
+На этапе локальных проверок 12.10.2026 production-развёртывание бюджетного
+дополнения ещё не выполнялось; оно зафиксировано отдельной записью 13.10.2026.
+Успешный GitHub run сентября относится к предыдущей версии.
 Полные записи сохраняют контекст своего этапа, включая прежние планы и ограничения.
 
 ## Сверка документации 12.10.2026
@@ -62,3 +65,43 @@
 
 Проверены локальные пути Markdown-ссылок и `git diff --check` для изменённой
 документации. Проверка путей не проверяет внешние URL и существование HTML-якорей.
+
+## Актуализация публичного стенда 14.10.2026
+
+Публичный URL: [https://together.2-26-49-210.sslip.io/](https://together.2-26-49-210.sslip.io/).
+README, индекс, отчёты и эксплуатационные инструкции актуализированы:
+добавлен публичный URL и подтверждён выпуск бюджетного дополнения.
+Автоматическое развёртывание описано как связка GitHub Actions и Komodo/Renovate.
+Сведения о размещении и внутренней конфигурации исключены из документации,
+включая архивные отчёты. Сентябрьские результаты проверок сохранены с датами.
+
+Повторно выполнены в Windows:
+
+| Команда | Результат |
+| --- | --- |
+| `curl.exe --fail --silent --show-error --max-time 30 --output NUL --write-out "root HTTP %{http_code}\n" https://together.2-26-49-210.sslip.io/` | HTTP 200 |
+| `curl.exe --fail --silent --show-error --max-time 30 https://together.2-26-49-210.sslip.io/health/ready` | `Healthy`, код завершения 0 |
+| `curl.exe --silent --show-error --max-time 30 --output NUL --write-out "trips HTTP %{http_code}\n" https://together.2-26-49-210.sslip.io/api/trips` | HTTP 401 без аутентификации |
+| `dotnet build Together.slnx --configuration Release --no-restore --nologo` | Успех, 0 ошибок и 0 предупреждений |
+| `dotnet test tests/Together.Tests/Together.Tests.csproj --configuration Release --no-build --no-restore --nologo` | 58/58 |
+| `dotnet test tests/Together.Api.Tests/Together.Api.Tests.csproj --configuration Release --no-build --no-restore --nologo` | 24/24 |
+| `dotnet run --project tests/Together.BrowserTests --configuration Release --no-build --no-restore -- --backend-smoke` | PASS: регистрация, бюджет/резерв, уточнения, отказ записи, настоящий конфликт, мобильный UI/клавиатура и выход |
+
+Для smoke заданы `APP_URL=https://together.2-26-49-210.sslip.io` и
+`BROWSER_EVIDENCE_DIR=artifacts/docs-public-site-20261014`.
+Тест создал отдельную учётную запись `browser-<GUID>@example.test` с вымышленными
+данными; прежний evidence не перезаписан.
+
+Дополнительно проверены `git diff --check` и локальные пути Markdown-ссылок
+в изменённых документах. HTML-якоря и все внешние ссылки автоматически не проверялись.
+Исходники приложения, workflow и серверная конфигурация не менялись;
+новое развёртывание в рамках этой актуализации не выполнялось. Полный OAuth-вход
+с реальным аккаунтом Яндекса и поступление событий в Метрику не проверялись.
+
+При последующей редакции в тот же день из действующей и архивной документации
+удалены сведения о размещении, внутренние адреса, имена узлов и серверные пути.
+Описание автоматического развёртывания через GitHub Actions и Komodo/Renovate
+приведено по уточнению владельца проекта; настройки этой интеграции не проверялись.
+Выполнены поиск раскрывающих инфраструктуру сведений, проверка локальных
+Markdown-ссылок и `git diff --check`. После этой редакционной правки сборка
+и тесты повторно не запускались; результаты выше относятся к предыдущей проверке.

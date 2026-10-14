@@ -76,7 +76,7 @@ Smoke охватывает регистрацию, сохранение/пере
 [форма 200%](../evidence/budget-planning/budget-form-200.png).
 Старые evidence не заменяются: каталог выбирается через `BROWSER_EVIDENCE_DIR`.
 
-Ограничения: Docker/multi-platform image в этой среде не собирались; HTTPS/Traefik
+Ограничения: Docker/multi-platform image в этой среде не собирались; production HTTPS
 и настоящий production-deployment не проверялись. Publish сообщил об отсутствии
 опционального workload wasm-tools; выполненный smoke использует опубликованный
 клиент без дополнительных оптимизаций WebAssembly. После новых изменений

@@ -161,11 +161,14 @@ cp deploy.env.example .env.deploy
 docker compose --env-file .env.deploy --file docker-compose.deploy.yml up -d
 ```
 
-Учебный production-стенд работает на `192.168.1.26` за существующими Traefik и
-локальным центром сертификации. Публичного IP у стенда нет. Deployment выполняется
-оператором вручную; подготовленный job для self-hosted GitHub runner отключён в
-текущем универсальном workflow из-за зависимости от локального пути, runner
-labels, приватной сети и PKI.
+Учебный production-стенд доступен по адресу
+[https://together.2-26-49-210.sslip.io/](https://together.2-26-49-210.sslip.io/).
+Автоматическое развёртывание выполняется через GitHub Actions и Komodo/Renovate.
+GitHub Actions проверяет и публикует образ в GHCR; Komodo/Renovate обеспечивают
+обновление образа и deployment. Подробности — в
+[документации развёртывания](docs/manual_production_deployment.md).
+Миграции выполняются отдельным заданием; PostgreSQL и ключи Data Protection
+сохраняются между обновлениями.
 
 `docker-compose.deploy.yml` использует официальный `postgres:17-alpine`, не
 публикует порт БД, применяет EF-миграции отдельным контейнером и хранит PostgreSQL
@@ -231,10 +234,12 @@ GitHub Actions Publish container image             — GHCR, AMD64/ARM64, усп
 [GitHub Actions run](https://github.com/Tipz/HT6/actions/runs/35828731866)
 успешно выполнил format/NuGet audit, Release build, оба xUnit-проекта, CodeQL,
 Compose/PostgreSQL/Chromium smoke, AMD64/ARM64 publish и smoke опубликованного
-digest. Владелец подтвердил HTTPS, Яндекс ID и Метрику на локальном стенде за
-существующим Traefik и локальной PKI.
+digest. Владелец подтвердил HTTPS, Яндекс ID и Метрику.
 
-Бюджетное дополнение от 12.10.2026: локально зафиксированы 58 Core/UI- и 24 API-теста, миграция PostgreSQL и расширенный backend smoke. Команды, evidence и ограничения — в [budget_planning.md](docs/budget_planning.md). Эти результаты не подтверждают публикацию контейнера или production-выпуск дополнения.
+Бюджетное дополнение от 12.10.2026: локально зафиксированы 58 Core/UI- и 24 API-теста, миграция PostgreSQL и расширенный backend smoke. Команды, evidence и ограничения — в [budget_planning.md](docs/budget_planning.md).
+Production-развёртывание и backend smoke публичного адреса выполнены 13.10.2026:
+[отчёт](docs/manual_production_deployment.md). После исправления OAuth smoke
+прошёл повторно: [результаты](docs/yandex_oauth_configuration_fix.md).
 
 ## Автоматизация GitHub
 
