@@ -8,14 +8,14 @@ JSON-логирование.
 Результаты сдачи ДЗ № 6 ниже зафиксированы 23 сентября 2026 года.
 Актуализация от 14.10.2026: [публичный сайт](https://together.2-26-49-210.sslip.io/)
 доступен по HTTPS; бюджетное дополнение и исправление OAuth развёрнуты
-13.10.2026. Октябрьские проверки описаны в [отчёте развёртывания](docs/manual_production_deployment.md)
-и [отчёте OAuth](docs/yandex_oauth_configuration_fix.md).
+13.10.2026. Октябрьские проверки описаны в [отчёте развёртывания](../manual_production_deployment.md)
+и [отчёте OAuth](../yandex_oauth_configuration_fix.md).
 
 ## Состав сдачи
 
 | Требование | Реализация |
 | --- | --- |
-| CI/CD | `.github/workflows/ci.yml`: обязательный CodeQL → format/audit, build/tests и backend smoke → multi-platform publish → smoke опубликованного digest; актуальная ревизия от 12.10.2026 описана в [ci_revision.md](docs/ci_revision.md) |
+| CI/CD | `.github/workflows/ci.yml`: обязательный CodeQL → format/audit, build/tests и backend smoke → multi-platform publish → smoke опубликованного digest; актуальная ревизия от 12.10.2026 описана в [ci_revision.md](../ci_revision.md) |
 | Container | `ghcr.io/tipz/together` для `linux/amd64` и `linux/arm64` |
 | Deployment | Автоматическое развёртывание через GitHub Actions и Komodo/Renovate; отдельный `migrate`, persistent PostgreSQL и Data Protection |
 | OAuth 2.0 | Backend Authorization Code Flow с PKCE через Яндекс ID; вход по паролю сохранён |
@@ -82,15 +82,15 @@ PostgreSQL и ключи Data Protection сохраняются между об�
 - собственный `YANDEX_METRIKA_COUNTER_ID`;
 - секреты в исключённом из Git `.env.deploy` или secret store.
 
-Инструкции находятся в [README](README.md),
-[backend_documentation.md](backend_documentation.md) и
-[docs/integration_documentation.md](docs/integration_documentation.md).
+Инструкции находятся в [README](../../README.md),
+[backend_documentation.md](../../backend_documentation.md) и
+[docs/integration_documentation.md](../integration_documentation.md).
 
 ## Документы
 
-- [Отчёт преподавателю](docs/homework_6_report.md)
-- [Документация интеграций](docs/integration_documentation.md)
-- [Аудит безопасности](docs/security_audit.md)
-- [AI-анализ синтетического лога](docs/log_analysis.md)
-- [Шаблоны AI-промптов](docs/prompt_templates.md)
-- [Evidence браузерных проверок](docs/evidence)
+- [Отчёт преподавателю](homework_6_report.md)
+- [Документация интеграций](../integration_documentation.md)
+- [Аудит безопасности](../security_audit.md)
+- [AI-анализ синтетического лога](../log_analysis.md)
+- [Шаблоны AI-промптов](prompt_templates.md)
+- [Evidence браузерных проверок](../evidence)

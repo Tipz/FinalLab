@@ -4,8 +4,8 @@
 > разделы 6–8 — промпты, использованные при подготовке ДЗ № 6. Некоторые пункты
 > фиксируют первоначальный план автоматического deploy. Текущее состояние —
 > GitHub Actions и автоматическое развёртывание через Komodo/Renovate — описано в
-> [корневом README](../README.md); рабочие правила приведены в
-> [AGENTS.md](../AGENTS.md).
+> [корневом README](../../README.md); рабочие правила приведены в
+> [AGENTS.md](../../AGENTS.md).
 
 Источник: соседний учебный репозиторий HT2, файл Отчет/prompt_templates.md.
 Сохранена структура RTCF: Role, Task, Context, Format. Серверный контекст
@@ -85,4 +85,4 @@ Home Services Dashboard заменён на standalone Blazor WebAssembly и Ind
 ## 8. Анализ логов
 
 Фактический prompt, синтетический вход, AI-вывод и ручная проверка сохранены в
-[log_analysis.md](log_analysis.md). Production-логи AI не передавались.
+[log_analysis.md](../log_analysis.md). Production-логи AI не передавались.

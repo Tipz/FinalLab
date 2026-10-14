@@ -144,7 +144,7 @@ Remove-Item Env:APP_URL,Env:BROWSER_EVIDENCE_DIR
 
 Последовательность с Docker Compose здесь не выполнялась; Linux-контейнеры,
 production-развёртывание и Firefox в эту локальную проверку не входили.
-Исторический двухбраузерный IndexedDB-набор ДЗ № 4 не заменяет backend-smoke.
+Исторический двухбраузерный IndexedDB-набор описан в [архиве](history/development_report.md); текущая проверка выполняется через `--backend-smoke`.
 
 ## Уточнение UI от 14.10.2026
 

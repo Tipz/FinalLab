@@ -31,13 +31,13 @@
 | 8. Оформление | На этапе ДЗ № 4 подготовлены README, отчёт, исходники тестов и скриншоты; GitHub-публикация выполнена позднее в ДЗ № 5 |
 
 Фактические результаты и ограничения проверок ДЗ № 4 находятся в
-[development_report.md](../../development_report.md) и [evidence](../evidence/).
+[development_report.md](development_report.md) и [evidence](../evidence/).
 Текущее состояние GitHub/GHCR отражено в корневой документации.
 
 ## Материалы ДЗ 2
 
 В соседнем HT2 найдены Отчет/prompt_templates.md и Отчет/rules.md.
-Структура RTCF адаптирована в [prompt_templates.md](../prompt_templates.md),
+Структура RTCF адаптирована в [prompt_templates.md](prompt_templates.md),
 рабочие правила — в [AGENTS.md](../../AGENTS.md).
 
 На этапе ДЗ № 4 серверные EF Core/SQLite и Blazor Interactive Server не переносились.

@@ -6,7 +6,7 @@ EF Core и PostgreSQL.
 
 Отчёт фиксирует результаты ДЗ № 6 на 23.09.2026 с актуализацией сведений
 о развёртывании от 14.10.2026. Дополнение US-14/US-15 описано в
-[budget_planning.md](budget_planning.md) и развёрнуто 13.10.2026.
+[budget_planning.md](../budget_planning.md) и развёрнуто 13.10.2026.
 Публичный сайт: **[https://together.2-26-49-210.sslip.io/](https://together.2-26-49-210.sslip.io/)**.
 
 ## CI/CD
@@ -25,14 +25,14 @@ EF Core и PostgreSQL.
 - публикацию образа в `ghcr.io/tipz/together`;
 - smoke-проверку опубликованного образа.
 
-В ревизии от 12.10.2026 CodeQL стал первым обязательным job: ошибки анализа и неподавленные SARIF findings блокируют проверки и публикацию. Format, NuGet audit, Release, xUnit и backend smoke объединены в `quality`. Подробности и ограничения локальных проверок: [ci_revision.md](ci_revision.md). Сентябрьский GitHub run ниже относится к предыдущему workflow.
+В ревизии от 12.10.2026 CodeQL стал первым обязательным job: ошибки анализа и неподавленные SARIF findings блокируют проверки и публикацию. Format, NuGet audit, Release, xUnit и backend smoke объединены в `quality`. Подробности и ограничения локальных проверок: [ci_revision.md](../ci_revision.md). Сентябрьский GitHub run ниже относится к предыдущему workflow.
 
 Автоматическое развёртывание выполняется через GitHub Actions и Komodo/Renovate.
 GitHub Actions проверяет код и публикует образ в GHCR; Komodo/Renovate
 обеспечивают обновление образа и deployment приложения.
 Миграции базы данных выполняются отдельным одноразовым заданием до запуска
 приложения. PostgreSQL и ключи Data Protection сохраняются между обновлениями.
-Подробнее: [документация развёртывания](manual_production_deployment.md).
+Подробнее: [документация развёртывания](../manual_production_deployment.md).
 
 ## Развёртывание
 
@@ -83,7 +83,7 @@ GitHub Actions проверяет код и публикует образ в GHC
 13.10.2026 развёрнуты исправления конфигурации и свойств external authentication.
 Полный вход с реальным аккаунтом после обновления требует проверки пользователем;
 backend smoke проверяет собственную регистрацию и вход по паролю.
-Подробности: [отчёт OAuth](yandex_oauth_configuration_fix.md).
+Подробности: [отчёт OAuth](../yandex_oauth_configuration_fix.md).
 
 ## Интеграция Яндекс Метрики
 

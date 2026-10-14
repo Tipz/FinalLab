@@ -1,23 +1,26 @@
 # Вместе в путь
 
-[![CI and publish](https://github.com/Tipz/HT6/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Tipz/HT6/actions/workflows/ci.yml)
+[![CI and publish](https://github.com/Tipz/FinalLab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Tipz/FinalLab/actions/workflows/ci.yml)
 
-«Вместе в путь» — учебное клиент-серверное приложение для планирования и
+«Вместе в путь» — клиент-серверное приложение для планирования и
 сравнения семейных поездок. Пользователь может вести несколько поездок,
 сравнивать варианты размещения и направлений, рассчитывать бюджет и хранить
 данные в своей учётной записи.
 
 Публичный сайт: **[together.2-26-49-210.sslip.io](https://together.2-26-49-210.sslip.io/)**.
 
-Текущая версия выполнена в рамках домашнего задания № 6. К приложению добавлены
-CI/CD, аудит безопасности, OAuth 2.0 через Яндекс ID, Яндекс Метрика с явным
-согласием, health checks и структурированные JSON-логи. Вход по email и паролю
-сохранён. Платёжный сервис не используется, поскольку он является опциональным и
-не требуется предметной области проекта.
+Финальный проект включает CI/CD, OAuth 2.0 через Яндекс ID, Яндекс Метрику
+с явным согласием, health checks и структурированные JSON-логи.
+Доступны регистрация и вход по email и паролю.
+
+**[Итоговый отчёт проекта](development_report.md)** — возможности, стенд,
+результаты текущего CI, локальные проверки и матрица критериев приёмки.
 
 ![Экран «Сравнение» с вымышленными данными](docs/evidence/ui-polish/screen-comparison-1440.png)
 
-Документация актуализирована 14.10.2026: [индекс](docs/README.md), [оставшиеся работы](docs/IMPLEMENTATION_PLAN.md), [исторический журнал](docs/history/README.md). Бюджетное дополнение развёрнуто 13.10.2026; схема публичного доступа и проверки описаны в [отчёте о развёртывании](docs/manual_production_deployment.md).
+Документация актуализирована 14.10.2026: [индекс](docs/README.md),
+[оставшиеся работы](docs/IMPLEMENTATION_PLAN.md), [архив](docs/history/README.md).
+Схема публичного доступа описана в [документации развёртывания](docs/manual_production_deployment.md).
 
 ## Возможности
 
@@ -191,7 +194,11 @@ Client Secret и Redirect URI.
 Результаты ревизии этапов и локальных проверок: [docs/ci_revision.md](docs/ci_revision.md).
 
 Workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) запускается для
-pull request и push в `main`, push тегов `v*`, а также вручную (`workflow_dispatch`).
+pull request в `main`, push тегов вида `v1.2.3`, а также вручную (`workflow_dispatch`).
+Каждая часть версии содержит одну или несколько цифр; теги с суффиксами
+вроде `-rc1` не запускают workflow. Обычный push в `main` его не запускает.
+Перед анализом CodeQL проверяется, что коммит тега входит в историю `main`:
+тег на коммите из неслитой ветки блокирует проверки и публикацию.
 
 Последовательность проверок:
 
@@ -225,17 +232,27 @@ Smoke опубликованного digest сохранён: он провер�
 workflow сам по себе блокирует дальнейшие jobs и публикацию, но не кнопку merge.
 
 Pull request выполняет проверки, но не публикует образ. Ручной запуск публикует
-только из `main`. После успешного push в
-`main` workflow публикует образ для `linux/amd64` и `linux/arm64` в
-[GitHub Container Registry](https://github.com/Tipz/HT6/pkgs/container/together):
+только из `main`. После push тега версии на коммит из `main` и успешных проверок
+workflow публикует образ для `linux/amd64` и `linux/arm64` в
+[GitHub Container Registry](https://github.com/Tipz/FinalLab/pkgs/container/together):
 
 ```text
 ghcr.io/tipz/together
 ```
 
-Доступны теги `latest`, `main`, `sha-<полный SHA>` и `v*` для Git-тегов.
+Для выпуска по Git-тегу доступны `sha-<полный SHA>` и тег версии `v1.2.3`;
+при ручной публикации из `main` также создаются `latest` и `main`.
 Production deployment рекомендуется выполнять по неизменяемой ссылке
 `ghcr.io/tipz/together@sha256:...`.
+
+Пример выпуска после коммита изменений workflow в `main`:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git tag v1.2.3
+git push origin v1.2.3
+```
 
 Автоматическое развёртывание обеспечивают GitHub Actions и Komodo/Renovate.
 GitHub Actions выполняет проверки и публикует образ в GHCR;
@@ -363,8 +380,8 @@ Remove-Item Env:APP_URL
 перезагрузки и выход. Все тестовые данные вымышлены. Результаты и скриншоты
 находятся в [`docs/evidence`](docs/evidence).
 
-Набор без `--backend-smoke` относится к исторической IndexedDB-версии ДЗ № 4 и
-не является проверкой текущего backend.
+Команда без `--backend-smoke` запускает прежний набор для IndexedDB.
+Его результаты сохранены в [архиве](docs/history/README.md).
 
 ## Структура репозитория
 
@@ -384,8 +401,8 @@ Remove-Item Env:APP_URL
 
 ## Документация
 
-- [Отчёт о выполнении ДЗ № 6](docs/homework_6_report.md)
-- [Материалы сдачи ДЗ № 6](SUBMISSION.md)
+- [Итоговый отчёт и матрица критериев](development_report.md)
+- [Индекс действующей документации](docs/README.md)
 - [Документация интеграций](docs/integration_documentation.md)
 - [Аудит безопасности](docs/security_audit.md)
 - [Backend и эксплуатация](backend_documentation.md)
@@ -395,7 +412,7 @@ Remove-Item Env:APP_URL
 - [Требования backend](docs/backend_requirements.md)
 - [Пользовательские истории](docs/user_stories.md)
 - [AI-анализ логов](docs/log_analysis.md)
-- [Шаблоны AI-промптов](docs/prompt_templates.md)
+- [Архив этапов разработки](docs/history/README.md)
 
 Приложение доступно по публичному HTTPS-адресу; репозиторий и опубликованные
 multi-platform образы доступны через GitHub и GHCR.

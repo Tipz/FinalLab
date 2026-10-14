@@ -42,7 +42,7 @@ SQL-вариант — `database/migrations.sql`.
 в production приложение должно публиковаться только по HTTPS. Пароли обрабатывает
 Identity и они не попадают в логи.
 
-Для учебного стенда пароль может состоять из любых пяти и более символов; пароль
+По действующей политике пароль может состоять из любых пяти и более символов; пароль
 из пяти цифр также допустим. Эта намеренно упрощённая политика не подходит для
 публичного сервиса.
 
@@ -130,10 +130,12 @@ Compose сначала ждёт PostgreSQL, запускает одноразо�
 ghcr.io/tipz/together
 ```
 
-Manifest содержит `linux/amd64` и `linux/arm64`. Push в `main` обновляет теги
-`latest`, `main` и `sha-<полный SHA>`; Git-тег `v*` создаёт одноимённый тег
-образа. `latest` изменяемый, поэтому production-развёртывание следует закреплять
-за release- или SHA-тегом.
+Manifest содержит `linux/amd64` и `linux/arm64`. Автоматическая публикация
+в текущей конфигурации запускается по тегу вида `v1.2.3`, чей коммит
+входит в историю `main`; создаются тег версии и `sha-<полный SHA>`.
+Ручной запуск из `main` также обновляет `latest` и `main`. Для production
+используйте неизменяемый digest. Результат последнего CI относится к
+конфигурации указанного SHA: [итоговый отчёт](development_report.md#текущий-ci).
 
 Образ включает `Together.Api` и опубликованный `Together.Client`, слушает порт
 `8080` и запускается от непривилегированного пользователя `app`. Перед основным
@@ -161,7 +163,7 @@ cp deploy.env.example .env.deploy
 docker compose --env-file .env.deploy --file docker-compose.deploy.yml up -d
 ```
 
-Учебный production-стенд доступен по адресу
+Публичный стенд доступен по адресу
 [https://together.2-26-49-210.sslip.io/](https://together.2-26-49-210.sslip.io/).
 Автоматическое развёртывание выполняется через GitHub Actions и Komodo/Renovate.
 GitHub Actions проверяет и публикует образ в GHCR; Komodo/Renovate обеспечивают
@@ -183,7 +185,7 @@ SHA-тег и повторите `up -d`. Обычный `docker compose ... dow
 
 Секреты нельзя передавать как Docker build arguments или сохранять в образе. Для
 приватной копии пакета целевой хост должен выполнить `docker login ghcr.io` с
-минимальным правом `read:packages`; текущий пакет `Tipz/HT6` доступен публично.
+минимальным правом `read:packages`; пакет [together](https://github.com/Tipz/FinalLab/pkgs/container/together) доступен публично.
 
 ## Запуск из исходников без Docker
 
@@ -211,35 +213,11 @@ docker compose exec -T database pg_dump -U together -d together -Fc > together.b
 
 ## Проверки
 
-Историческая локальная проверка ДЗ № 5 от 17 сентября 2026 года:
-
-```text
-dotnet build Together.slnx -c Release              — успешно, 0 ошибок, 0 предупреждений
-dotnet test tests/Together.Tests -c Release        — успешно, Core/UI 32/32
-dotnet test tests/Together.Api.Tests -c Release    — успешно, API 4/4
-dotnet ef migrations has-pending-model-changes     — изменений модели нет
-docker compose up --build -d                       — успешно на Linux-ВМ, Compose 2.39.1
-GET /health/ready                                  — Healthy
-Playwright --backend-smoke                         — Chromium, успешно
-GitHub Actions CI                                  — Release build, Core/UI 32/32, API 4/4
-GitHub Actions Backend browser smoke               — Compose + PostgreSQL + Chromium, успешно
-GitHub Actions Publish container image             — GHCR, AMD64/ARM64, успешно
-```
-
-На стенде ДЗ № 5 были подтверждены регистрация и cookie-вход, создание и чтение поездки,
-создание варианта с расходами `0` и `null`, конфликт revision, изоляция владельцев,
-выход и сохранение данных после перезагрузки страницы.
-
-Для ДЗ № 6 20 сентября 2026 года локально прошли 36 Core/UI- и 15 API-тестов. Для версии от 23 сентября 2026 года
-[GitHub Actions run](https://github.com/Tipz/HT6/actions/runs/35828731866)
-успешно выполнил format/NuGet audit, Release build, оба xUnit-проекта, CodeQL,
-Compose/PostgreSQL/Chromium smoke, AMD64/ARM64 publish и smoke опубликованного
-digest. Владелец подтвердил HTTPS, Яндекс ID и Метрику.
-
-Бюджетное дополнение от 12.10.2026: локально зафиксированы 58 Core/UI- и 24 API-теста, миграция PostgreSQL и расширенный backend smoke. Команды, evidence и ограничения — в [budget_planning.md](docs/budget_planning.md).
-Production-развёртывание и backend smoke публичного адреса выполнены 13.10.2026:
-[отчёт](docs/manual_production_deployment.md). После исправления OAuth smoke
-прошёл повторно: [результаты](docs/yandex_oauth_configuration_fix.md).
+Актуальные команды, результаты CI, 66 Core/UI- и 25 API-тестов и ограничение
+проверки публичного стенда приведены в [итоговом отчёте](development_report.md).
+API xUnit использует EF InMemory; PostgreSQL и миграции проверяются в CI smoke.
+Датированные проверки прежних этапов сохранены в
+[архивном backend-отчёте](docs/history/backend_documentation.md#проверки).
 
 ## Автоматизация GitHub
 
@@ -247,7 +225,7 @@ Production-развёртывание и backend smoke публичного ад
 
 | Workflow | Автоматический запуск | Результат |
 | --- | --- | --- |
-| `.github/workflows/ci.yml` | push и pull request в `main`, теги `v*` | Format/audit, Release build, xUnit, CodeQL, Compose/Chromium smoke, multi-platform publish и smoke опубликованного digest |
+| `.github/workflows/ci.yml` | pull request в `main`, теги `vMAJOR.MINOR.PATCH`, ручной запуск | Format/audit, Release build, xUnit, CodeQL, Compose/Chromium smoke; publish после push подходящего тега либо ручного запуска из `main` |
 
 Публикация использует автоматически выдаваемый `GITHUB_TOKEN` только с правами
 `contents: read` и `packages: write`; персональный токен в репозитории не нужен.
@@ -258,8 +236,6 @@ publish job дополнительно запускает этот Compose с т
 
 ## Использование AI
 
-AI-ассистент помог сопоставить требования ДЗ № 5 с моделью ДЗ № 4, спроектировать
-нормализованную схему, сгенерировать и проверить EF-конфигурацию, API, обработку
-конфликтов, Docker-файлы и тесты. Результат проверялся компилятором, EF CLI и xUnit;
-контейнерный сценарий дополнительно проверен на Linux-ВМ с настоящим PostgreSQL и
-Playwright Chromium.
+AI применялся при проектировании схемы, API, обработке конфликтов и проверке
+контейнеризации. Материалы и результаты прежних этапов сохранены в
+[архиве](docs/history/backend_documentation.md#использование-ai).

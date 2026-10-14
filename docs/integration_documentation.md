@@ -1,26 +1,17 @@
-# Интеграции и CI/CD — домашнее задание № 6
+# Интеграции и CI/CD
 
 Статус документа: актуальное состояние проекта.
-Последнее обновление: 14 октября 2026 года. Датированные результаты сентября относятся к версии ДЗ № 6 до бюджетного дополнения.
+Последнее обновление: 14 октября 2026 года. Результаты текущего CI — в [итоговом отчёте](../development_report.md).
 
 Принятые решения и последовательность работ зафиксированы в
 [историческом журнале](history/README.md); детали интеграций приведены
 ниже.
 
-## 1. Исходное состояние
+## 1. Состав приложения
 
 Приложение состоит из standalone Blazor WebAssembly, ASP.NET Core Minimal API и
 PostgreSQL. Клиент публикуется в `wwwroot` API, а аутентификация выполняется через
 ASP.NET Core Identity cookie.
-
-До начала ДЗ № 6 в репозитории присутствовали:
-
-- CI с Release build и двумя xUnit-проектами;
-- Compose/Chromium backend smoke;
-- публикация AMD64/ARM64-образа в GHCR;
-- Docker Compose с отдельным migration job;
-- `/health` и `/health/ready`;
-- текстовые console logs ASP.NET Core.
 
 В репозитории реализованы OAuth2 через Яндекс ID, opt-in Яндекс Метрика,
 antiforgery, JSON-логи и единый CI/publish pipeline. Публичный production URL:
@@ -44,7 +35,7 @@ antiforgery, JSON-логи и единый CI/publish pipeline. Публичны
 
 | Workflow | Фактическая функция | Ограничение |
 | --- | --- | --- |
-| `.github/workflows/ci.yml` | Обязательный CodeQL → format/NuGet audit, build/xUnit и Compose/Chromium → publish digest → smoke опубликованного образа | [Ревизия 12.10.2026](ci_revision.md); [успешный run предыдущей версии](https://github.com/Tipz/HT6/actions/runs/35828731866) |
+| `.github/workflows/ci.yml` | Обязательный CodeQL → format/NuGet audit, build/xUnit и Compose/Chromium → publish digest → smoke опубликованного образа | [Ревизия 12.10.2026](ci_revision.md); [результаты текущего CI](../development_report.md#текущий-ci) |
 
 ### Последовательность обязательных этапов
 
@@ -56,8 +47,11 @@ CodeQL запускается первым без `continue-on-error`; `quality`
 publish — от `quality`. Ошибки анализа и неподавленные SARIF findings блокируют
 последующие jobs. Отдельный Dependency Review удалён; NuGet audit обязателен.
 Pull request выполняет только проверки. Ручной запуск публикует только из `main`.
-Push в `main` после успешных проверок
-публикует immutable image. Обновление образа и автоматическое развёртывание
+Текущая конфигурация запускает автоматическую публикацию по тегу вида
+`v1.2.3`, чей коммит входит в историю `main`. Обычный push в `main` workflow
+не запускает. Эта конфигурация ещё не проверена опубликованным run;
+границы подтверждения указаны в [итоговом отчёте](../development_report.md#текущий-ci).
+Обновление образа и автоматическое развёртывание
 приложения обеспечивают Komodo/Renovate.
 
 ### Production secrets и variables
@@ -291,47 +285,16 @@ OAuth и аналитика необязательны для локальног
 
 ## 9. Проверка интеграций
 
-Фактический локальный набор проверок:
+Фактические команды и результаты текущей версии приведены в
+[итоговом отчёте](../development_report.md). В CI проверяются CodeQL, NuGet,
+Release-сборка, xUnit, Compose/PostgreSQL и Chromium backend smoke,
+публикация AMD64/ARM64 и запуск опубликованного digest.
 
-```powershell
-dotnet format Together.slnx --verify-no-changes
-dotnet restore Together.slnx --locked-mode
-dotnet build Together.slnx -c Release --no-restore
-dotnet test tests/Together.Tests/Together.Tests.csproj -c Release
-dotnet test tests/Together.Api.Tests/Together.Api.Tests.csproj -c Release
-dotnet package list --project Together.slnx --include-transitive --vulnerable
-```
+OAuth-тесты используют тестовую authentication scheme. Тесты аналитики
+проверяют consent, очистку путей и отзыв согласия без отправки реальных событий.
+Полный вход через Яндекс ID и получение событий Метрикой на текущем стенде
+требуют отдельной проверки. Публичный стенд показал прежний единый экран,
+поэтому его соответствие текущему коду не подтверждено.
 
-Автоматизировано и подтверждено:
-
-- Compose backend smoke;
-- успешный и отменённый OAuth flow с тестовой authentication scheme;
-- отсутствие запросов к Яндекс Метрике до consent;
-- SPA-просмотры и цели Яндекс Метрики после consent;
-- `/health` и `/health/ready`;
-- проверка JSON-логов на отсутствие чувствительных данных.
-
-20 сентября 2026 года локально выполнены format, locked restore, Release build,
-оба xUnit-проекта, NuGet audit, `/health` и просмотр JSON-лога. На этой Windows-
-машине Docker CLI отсутствовал. 23 сентября 2026 года GitHub Actions успешно
-выполнил Compose/backend smoke, CodeQL, multi-platform publish и smoke
-опубликованного digest. Владелец проекта отдельно подтвердил развёртывание,
-Яндекс ID и Метрику.
-
-## 10. Использование AI
-
-На этапе планирования AI использован для:
-
-- сопоставления требований ДЗ № 6 с текущей архитектурой;
-- поиска конфликтов scope;
-- предварительного обзора CI/CD и security controls;
-- формирования последовательного плана.
-
-Фактические промпты сохранены в [prompt_templates.md](prompt_templates.md) для:
-
-- генерации/ревью GitHub Actions;
-- OWASP-аудита;
-- анализа обезличенных JSON-логов;
-
-Предложения AI проверялись сборкой, тестами, security review и успешным GitHub
-Actions run; пример анализа логов приведён в [log_analysis.md](log_analysis.md).
+Датированные результаты интеграций и материалы применения AI сохранены
+в [архивном отчёте](history/integration_documentation.md).

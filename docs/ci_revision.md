@@ -3,7 +3,7 @@
 Изменены `.github/workflows/ci.yml`, добавлен
 `.github/scripts/Test-CodeQlResults.ps1`, обновлён раздел CI в README.
 Описания pipeline синхронизированы также в документах сдачи, backend,
-интеграций, отчёте ДЗ № 6 и аудите безопасности. Историческая сверка явно
+интеграций, архивном отчёте и аудите безопасности. Историческая сверка явно
 отделена от более поздней ревизии workflow.
 
 ## Последовательность
@@ -69,3 +69,39 @@ multi-platform publish и smoke опубликованного digest локал
 Для запрета merge дополнительно нужны required status checks `CodeQL` и
 `Format, audit, Release, xUnit and backend smoke` в GitHub ruleset/branch protection.
 Настройки защиты ветки этой правкой файлов не меняются.
+
+## Запуск по тегам версии — 14 октября 2026
+
+В `.github/workflows/ci.yml` автоматический `push`-триггер изменён с `main`
+и `v*` на теги `v[0-9]+.[0-9]+.[0-9]+`, например `v0.0.0`, `v1.2.3`
+и `v10.20.300`. Обычный push в `main`, неполные версии и версии с суффиксами
+не запускают workflow. Проверки pull request в `main` и ручной запуск сохранены.
+Формат фильтра соответствует
+[синтаксису GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#filter-pattern-cheat-sheet).
+
+Checkout в `codeql` получает полную историю (`fetch-depth: 0`). Перед подготовкой
+CodeQL для `push` выполняется `git merge-base --is-ancestor HEAD origin/main`:
+коммит тега должен входить в историю `main`, включая более ранние коммиты.
+Тег на коммите неслитой ветки запускает workflow, но проверка завершается ошибкой
+и блокирует CodeQL, `quality` и публикацию. Фильтр тегов сам по себе не проверяет
+принадлежность коммита ветке.
+
+Автоматическая публикация разрешена только для `push` тега после успешных
+проверок; ручная публикация из `main` сохранена. Раздел CI и пример создания
+тега в README обновлены. Теги в репозитории не создавались и не отправлялись.
+
+Проверки выполнены на Windows с SDK `10.0.303` и
+`MSBuildEnableWorkloadResolver=false` для restore/build:
+
+| Команда / проверка | Результат |
+| --- | --- |
+| `dotnet restore Together.slnx --locked-mode` | Успешно |
+| `dotnet build Together.slnx --configuration Release --no-restore` | Успешно, 0 предупреждений, 0 ошибок |
+| `dotnet test tests/Together.Tests/Together.Tests.csproj --configuration Release --no-build --no-restore` | 66 пройдено, 0 пропущено |
+| `dotnet test tests/Together.Api.Tests/Together.Api.Tests.csproj --configuration Release --no-build --no-restore` | 25 пройдено, 0 пропущено |
+| `actionlint .github/workflows/ci.yml` (1.7.12) | Успешно |
+| `git diff --check -- .github/workflows/ci.yml README.md docs/ci_revision.md` | Успешно |
+| `dotnet run --project tests/Together.BrowserTests --configuration Release --no-build -- --backend-smoke` с `APP_URL=http://localhost:8080`, `BROWSER_EVIDENCE_DIR` в temp | Exit 1, `ERR_CONNECTION_REFUSED`: локальный backend не запущен |
+
+Docker отсутствует в PATH. Запуск workflow на GitHub, публикация образа
+и deployment в рамках этой правки не выполнялись.

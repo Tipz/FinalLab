@@ -151,8 +151,8 @@ DAST, penetration testing и централизованное хранилище
 ## 6. Связанные документы
 
 - [Основной README](../../README.md)
-- [Материалы сдачи](../../SUBMISSION.md)
-- [Отчёт преподавателю](../homework_6_report.md)
+- [Материалы сдачи](ht6_submission.md)
+- [Отчёт преподавателю](homework_6_report.md)
 - [Документация интеграций](../integration_documentation.md)
 - [Аудит безопасности](../security_audit.md)
 - [AI-анализ логов](../log_analysis.md)
