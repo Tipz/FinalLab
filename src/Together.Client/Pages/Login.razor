@@ -6,8 +6,9 @@
 <PageTitle>Вход — Вместе в путь</PageTitle>
 <main class="auth-page">
     <section class="panel auth-card" aria-labelledby="auth-title">
-        <div class="eyebrow">Личная учётная запись</div>
+        <a class="brand" href="/" aria-label="Вместе в путь, главная">вместе<span> / </span>в путь</a>
         <h1 id="auth-title">@(register ? "Регистрация" : "Вход")</h1>
+        <p class="auth-description">@(register ? "Создайте аккаунт, чтобы сохранять поездки и продолжать планирование с другого устройства." : "Войдите, чтобы открыть свои поездки.")</p>
         <EditForm Model="model" OnValidSubmit="Submit">
             <DataAnnotationsValidator />
             <MudTextField @bind-Value="model.Email" Label="Email" InputType="InputType.Email" Required="true" Disabled="busy" />

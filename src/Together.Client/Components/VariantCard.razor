@@ -1,4 +1,4 @@
-<article class="panel variant-card" aria-label="@Variant.Name">
+<article class="@(Selected ? "panel variant-card is-selected" : "panel variant-card")" aria-label="@Variant.Name">
     <div class="card-top"><span class="place">@Variant.Destination</span><label class="select-variant"><input type="checkbox" checked="@Selected" disabled="@Busy" @onchange="() => Toggle.InvokeAsync(Variant.Id)" />Сравнить</label></div>
     <h3>@Variant.Name</h3><p class="accommodation">@Variant.Accommodation</p>
     <BudgetView Expenses="Variant.Expenses" NeedsReview="Variant.NeedsBudgetReview" BudgetLimitKopecks="BudgetLimitKopecks" ReservePercent="ReservePercent" ShowAssessment Details />

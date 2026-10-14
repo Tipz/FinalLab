@@ -2,8 +2,8 @@
 <NavigationLock OnBeforeInternalNavigation="BeforeNavigate" ConfirmExternalNavigation="@(editor is not null)" />
 <a class="skip-link" href="#main">К содержимому</a>
 <div class="shell">
-    <header><a href="./" class="brand" aria-label="Вместе в путь, главная">вместе<span> / </span>в путь</a><span class="header-note">Семейный планировщик<br />Данные введены вручную</span><MudButton OnClick="Logout" Variant="MudBlazor.Variant.Text">Выйти</MudButton></header>
-    <aside class="sidebar"><div class="eyebrow">Мой план</div>
+    <header class="app-header"><a href="./" class="brand" aria-label="Вместе в путь, главная">вместе<span> / </span>в путь</a><span class="header-note">Семейный планировщик</span><MudButton OnClick="Logout" Variant="MudBlazor.Variant.Text">Выйти</MudButton></header>
+    <aside class="sidebar"><div class="eyebrow">Планирование</div>
         <nav aria-label="Экраны планирования">
             <a href="/" aria-current="@(IsTripList ? "page" : null)">1. Мои поездки</a>
             @if (Current is not null)
@@ -17,10 +17,9 @@
                 <span aria-disabled="true">3. Сравнение</span>
             }
         </nav>
-        <p class="note">Важные детали.<br />Обдуманный выбор.<br />Всё в одном месте.</p>
     </aside>
     <main id="main">
-        <section class="intro"><div class="eyebrow">@(Current?.Name ?? "Семейный планировщик")</div><h1 tabindex="-1">@ScreenTitle</h1><p>@(IsTripList ? "Создайте поездку или откройте сохранённую, чтобы продолжить планирование." : IsComparison ? "Сравните выбранные варианты по бюджету, дороге и семейным удобствам." : "Соберите предложения, уточните расходы и отметьте варианты для сравнения.")</p></section>
+        <section class="intro">@if (Current is not null) { <div class="eyebrow">@Current.Name</div> }<h1 tabindex="-1">@ScreenTitle</h1><p>@(IsTripList ? "Создайте поездку или откройте сохранённую, чтобы продолжить планирование." : IsComparison ? "Сравните выбранные варианты по бюджету, дороге и семейным удобствам." : "Соберите предложения, уточните расходы и отметьте варианты для сравнения.")</p></section>
         @if (loading)
         { <div class="panel empty" role="status"><MudProgressCircular Indeterminate Color="Color.Primary" Size="Size.Medium" /><p>Загружаем поездки…</p></div> }
         else if (readFailed)
@@ -43,11 +42,9 @@
                             @foreach (var trip in data.Trips.OrderBy(t => t.CreatedAt))
                             {
                                 <article class="panel trip-card" aria-label="@trip.Name">
-                                    <h3>@trip.Name</h3>
-                                    <p>@trip.StartDate.ToString("dd.MM.yyyy") — @trip.EndDate.ToString("dd.MM.yyyy")</p>
-                                    <p class="note">Ночей: @trip.Nights · Взрослых: @trip.Adults · Детей: @trip.ChildAges.Length</p>
-                                    <p>Вариантов: @trip.Variants.Count · Выбрано: @trip.SelectedVariantIds.Count</p>
-                                    <div class="actions"><MudButton Href="@VariantsUrl(trip.Id)" Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Disabled="busy">Открыть варианты</MudButton><MudButton Href="@ComparisonUrl(trip.Id)" Color="Color.Primary" Disabled="busy">Сравнение</MudButton><MudButton OnClick="() => EditListedTrip(trip)" Disabled="busy">Параметры поездки</MudButton></div>
+                                    <div class="trip-overview"><h3>@trip.Name</h3><p>@trip.StartDate.ToString("dd.MM.yyyy") — @trip.EndDate.ToString("dd.MM.yyyy")</p><p class="note">Ночей: @trip.Nights · Взрослых: @trip.Adults · Детей: @trip.ChildAges.Length</p></div>
+                                    <dl class="trip-progress"><div><dt>Вариантов</dt><dd>@trip.Variants.Count</dd></div><div><dt>Для сравнения</dt><dd>@trip.SelectedVariantIds.Count</dd></div></dl>
+                                    <div class="actions trip-card-actions"><MudButton Href="@VariantsUrl(trip.Id)" Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Disabled="busy">Открыть варианты</MudButton><MudButton Href="@ComparisonUrl(trip.Id)" Color="Color.Primary" Disabled="busy">Сравнение</MudButton><MudButton OnClick="() => EditListedTrip(trip)" Disabled="busy">Параметры поездки</MudButton></div>
                                 </article>
                             }
                         </div>
@@ -70,10 +67,10 @@
                 }
                 else
                 {
-                    <div class="panel comparison-start"><p>Выбрано для сравнения: @Current.SelectedVariantIds.Count. Отметьте минимум два варианта.</p><MudButton Href="@ComparisonUrl(Current.Id)" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Disabled="busy">Перейти к сравнению</MudButton></div>
+                    <div class="panel comparison-start"><div><strong>Выбрано для сравнения: @Current.SelectedVariantIds.Count</strong><p class="note">Отметьте минимум два варианта в карточках.</p></div><MudButton Href="@ComparisonUrl(Current.Id)" Variant="MudBlazor.Variant.Filled" Color="Color.Primary" Disabled="busy">Перейти к сравнению</MudButton></div>
                 }
                 <section id="options" aria-labelledby="options-title">
-                    <div class="section-head"><div><div class="eyebrow">@(IsComparison ? "Детали выбранных предложений" : "Собираем идеи")</div><h2 id="options-title">@(IsComparison ? "Выбранные варианты" : "Ваши варианты") <span class="count">@(IsComparison ? Current.SelectedVariantIds.Count : Current.Variants.Count)</span></h2></div>@if (!IsComparison) { <MudButton OnClick="NewVariant" Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Disabled="busy">Добавить вариант</MudButton> }</div>
+                    <div class="section-head"><h2 id="options-title">@(IsComparison ? "Выбранные варианты" : "Ваши варианты") <span class="count">@(IsComparison ? Current.SelectedVariantIds.Count : Current.Variants.Count)</span></h2>@if (!IsComparison) { <MudButton OnClick="NewVariant" Color="Color.Primary" Variant="MudBlazor.Variant.Filled" Disabled="busy">Добавить вариант</MudButton> }</div>
                     @if (!IsComparison && Current.Variants.Count == 0) { <div class="panel empty"><h3>Пока нет вариантов</h3><p>Добавьте найденное жильё и направление. Расходы и удобства можно уточнить позже.</p></div> }
                     else { <div class="cards">@foreach (var v in Current.Variants.Where(v => !IsComparison || Current.SelectedVariantIds.Contains(v.Id)).OrderBy(v => v.CreatedAt)) { <VariantCard @key="(v.Id, comparisonKey)" Variant="v" Selected="Current.SelectedVariantIds.Contains(v.Id)" Busy="busy" BudgetLimitKopecks="Current.BudgetLimitKopecks" ReservePercent="Current.ReservePercent" SelectedCriteria="Current.SelectedCriteria" Clarify="ClarifyVariant" Toggle="ToggleVariant" Edit="EditVariant" Delete="DeleteVariant" /> }</div> }
                 </section>

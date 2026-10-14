@@ -43,6 +43,7 @@ public static class BackendSmoke
                 {
                     Timeout = 60_000
                 });
+            await CheckResponsiveScreen(page, "login", evidence, navigation: false);
             await page.GetByRole(AriaRole.Button, new()
             {
                 Name = "Создать аккаунт",
@@ -253,14 +254,24 @@ public static class BackendSmoke
         await Expect(page.Locator(".variant-card")).ToHaveCountAsync(3);
     }
 
-    private static async Task CheckResponsiveScreen(IPage page, string screen, string evidence)
+    private static async Task CheckResponsiveScreen(IPage page, string screen, string evidence, bool navigation = true)
     {
         foreach (var width in new[] { 360, 768, 1440 })
         {
             await page.SetViewportSizeAsync(width, 1000);
-            await Expect(page.Locator("nav[aria-label='Экраны планирования']")).ToBeVisibleAsync();
+            if (navigation)
+                await Expect(page.Locator("nav[aria-label='Экраны планирования']")).ToBeVisibleAsync();
             if (!await page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth <= innerWidth"))
                 throw new InvalidOperationException($"Screen {screen} overflows at {width}px.");
+            if (!await page.EvaluateAsync<bool>("""
+                () => [...document.querySelectorAll('.mud-button-root,.sidebar a,.brand,.filters label,.select-variant,summary')]
+                    .filter(element => element.getClientRects().length > 0)
+                    .every(element => {
+                        const bounds = element.getBoundingClientRect();
+                        return bounds.width >= 43.9 && bounds.height >= 43.9;
+                    })
+                """))
+                throw new InvalidOperationException($"Screen {screen} has an interactive target smaller than 44px at {width}px.");
             await page.ScreenshotAsync(new()
             {
                 Path = Path.Combine(evidence, $"screen-{screen}-{width}.png"),
