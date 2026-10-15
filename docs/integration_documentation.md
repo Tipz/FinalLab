@@ -1,7 +1,7 @@
 # Интеграции и CI/CD
 
 Статус документа: актуальное состояние проекта.
-Последнее обновление: 14 октября 2026 года. Результаты текущего CI — в [итоговом отчёте](../development_report.md).
+Последнее обновление: 15 октября 2026 года. Результаты текущего CI — в [итоговом отчёте](../development_report.md).
 
 Принятые решения и последовательность работ зафиксированы в
 [историческом журнале](history/README.md); детали интеграций приведены
@@ -37,22 +37,78 @@ antiforgery, JSON-логи и единый CI/publish pipeline. Публичны
 | --- | --- | --- |
 | `.github/workflows/ci.yml` | Обязательный CodeQL → format/NuGet audit, build/xUnit и Compose/Chromium → publish digest → smoke опубликованного образа | [Ревизия 12.10.2026](ci_revision.md); [результаты текущего CI](../development_report.md#текущий-ci) |
 
-### Последовательность обязательных этапов
+### Запуск workflow, проверки и публикация
+
+Результаты ревизии этапов и локальных проверок: [ревизия CI](ci_revision.md).
+
+Workflow [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) запускается для
+pull request в `main`, push тегов вида `v1.2.3`, а также вручную (`workflow_dispatch`).
+Каждая часть версии содержит одну или несколько цифр; теги с суффиксами
+вроде `-rc1` не запускают workflow. Обычный push в `main` его не запускает.
+Перед анализом CodeQL проверяется, что коммит тега входит в историю `main`:
+тег на коммите из неслитой ветки блокирует проверки и публикацию.
+
+Последовательность проверок:
 
 ```text
-CodeQL → quality (format/audit, build/tests, backend smoke) → publish → published-image smoke
+CodeQL (C# и JavaScript, блокирующий)
+  → locked restore
+  → format и NuGet audit
+  → Release build и xUnit
+  → Docker Compose и Chromium backend smoke
+  → multi-platform publish
+  → smoke опубликованного digest
 ```
 
-CodeQL запускается первым без `continue-on-error`; `quality` зависит от CodeQL,
-publish — от `quality`. Ошибки анализа и неподавленные SARIF findings блокируют
-последующие jobs. Отдельный Dependency Review удалён; NuGet audit обязателен.
-Pull request выполняет только проверки. Ручной запуск публикует только из `main`.
-Текущая конфигурация запускает автоматическую публикацию по тегу вида
-`v1.2.3`, чей коммит входит в историю `main`. Обычный push в `main` workflow
-не запускает. Эта конфигурация ещё не проверена опубликованным run;
+CodeQL — первый обязательный job: ошибка анализа, загрузки результатов или любое
+неподавленное замечание в SARIF останавливают последующие jobs. Для C# используется
+явная сборка с SDK из `global.json`, включая сгенерированный Razor-код. SARIF
+сохраняется в артефакт `codeql-results`; замечания доступны также в Code Scanning.
+Code Scanning должен быть доступен и настроен для advanced setup в репозитории.
+
+Format, аудит прямых и транзитивных NuGet-зависимостей, Release-сборка, оба
+xUnit-проекта и актуальный `--backend-smoke` объединены в один job `quality`:
+один restore и одна сборка решения после CodeQL. Отдельный необязательный
+Dependency Review удалён; аудит NuGet остаётся обязательным на всех запусках.
+Он проверяет уязвимости пакетов, но не заменяет проверку лицензий Dependency Review.
+Браузерные артефакты берутся из каталога текущего запуска, а не из старых `docs/evidence`.
+Smoke опубликованного digest сохранён: он проверяет запуск образа из GHCR
+через deployment Compose, включая отдельное выполнение миграций.
+
+Для запрета слияния PR настройте required status checks `CodeQL` и
+`Format, audit, Release, xUnit and backend smoke` в ruleset/branch protection;
+workflow сам по себе блокирует дальнейшие jobs и публикацию, но не кнопку merge.
+
+Pull request выполняет проверки, но не публикует образ. Ручной запуск публикует
+только из `main`. После push тега версии на коммит из `main` и успешных проверок
+workflow публикует образ для `linux/amd64` и `linux/arm64` в
+[GitHub Container Registry](https://github.com/Tipz/FinalLab/pkgs/container/together):
+
+```text
+ghcr.io/tipz/together
+```
+
+Для выпуска по Git-тегу доступны `sha-<полный SHA>` и тег версии `v1.2.3`;
+при ручной публикации из `main` также создаются `latest` и `main`.
+Production deployment рекомендуется выполнять по неизменяемой ссылке
+`ghcr.io/tipz/together@sha256:...`.
+
+Пример выпуска после коммита изменений workflow в `main`:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+Автоматическое развёртывание обеспечивают GitHub Actions и Komodo/Renovate.
+GitHub Actions выполняет проверки и публикует образ в GHCR;
+Komodo/Renovate обеспечивают обновление образа и deployment приложения.
+Настройки Komodo/Renovate управляются вне этого репозитория.
+
+Текущая конфигурация запуска по тегу ещё не проверена опубликованным run;
 границы подтверждения указаны в [итоговом отчёте](../development_report.md#текущий-ci).
-Обновление образа и автоматическое развёртывание
-приложения обеспечивают Komodo/Renovate.
 
 ### Production secrets и variables
 
@@ -141,7 +197,7 @@ Redirect URI `<APP_URL>/signin-yandex`.
 ### Реализованный провайдер
 
 Яндекс ID OAuth 2.0 через стандартный ASP.NET Core OAuth handler. Backend
-выполняет authorization code flow, обменивает code на token и отдельно получает
+выполняет Authorization Code Flow с PKCE, обменивает code на token и отдельно получает
 профиль из API Яндекс ID.
 
 Официальная документация:
@@ -162,6 +218,11 @@ Production-приложение запрашивает только `login:email
 Authentication__Yandex__ClientId
 Authentication__Yandex__ClientSecret
 ```
+
+При запуске через Compose настройкам соответствуют `YANDEX_CLIENT_ID` и
+`YANDEX_CLIENT_SECRET`. Для другого окружения задайте собственные URL, HTTPS,
+Client ID, Client Secret и точный Redirect URI `<APP_URL>/signin-yandex`
+в консоли Яндекс ID.
 
 Client Secret является серверным секретом. Client ID допустим в конфигурации, но
 для единообразия также поступает в backend через environment configuration.
@@ -207,7 +268,8 @@ Password login, регистрация и logout остаются доступн
 
 Яндекс Метрика для технических SPA page view и ограниченного набора целей.
 Публичный номер счётчика передаётся в клиентскую конфигурацию, например через
-`YandexMetrika__CounterId`; при его отсутствии аналитика выключена.
+`YandexMetrika__CounterId` (в Compose — `YANDEX_METRIKA_COUNTER_ID`);
+при его отсутствии аналитика выключена.
 
 ### Конфиденциальность
 

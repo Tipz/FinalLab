@@ -109,18 +109,43 @@ Content-Type: application/json
 
 ## Локальный запуск
 
-Нужны .NET SDK 10.0.303 и PostgreSQL 17 либо Docker с Compose.
+Потребуются Docker Engine и Docker Compose. Из корня репозитория:
 
 ```powershell
 Copy-Item .env.example .env
-# Заменить POSTGRES_PASSWORD в .env.
-# Для локального http://localhost:8080 установить SECURE_COOKIES=false.
-docker compose up --build
 ```
 
-Compose сначала ждёт PostgreSQL, запускает одноразовый контейнер миграции, затем
-приложение на `http://localhost:8080`. Volume `together-postgres` сохраняет БД, а
-`together-data-protection` — ключи шифрования cookie между перезапусками.
+Перед запуском обязательно задайте в `.env` новый длинный пароль PostgreSQL. Для
+изолированного локального HTTP-стенда также установите:
+
+```dotenv
+POSTGRES_PASSWORD=replace-with-a-long-random-password
+SECURE_COOKIES=false
+```
+
+Запустите приложение:
+
+```powershell
+docker compose up --build -d
+docker compose ps
+```
+
+После успешного завершения контейнера `migrate` приложение доступно по адресу
+<http://localhost:8080>. Состояние готовности можно проверить запросом
+<http://localhost:8080/health/ready>.
+
+Остановка без удаления данных:
+
+```powershell
+docker compose down
+```
+
+Файл `.env` исключён из Git. Не сохраняйте пароли, OAuth Client Secret и строки
+подключения в `appsettings.json`, Docker image, логах или Blazor bundle.
+
+Compose сначала ждёт PostgreSQL, затем запускает одноразовый контейнер миграции.
+Volume `together-postgres` сохраняет БД, а `together-data-protection` — ключи
+шифрования cookie между перезапусками.
 
 ## Готовый образ и перенос на другую инфраструктуру
 
@@ -189,15 +214,46 @@ SHA-тег и повторите `up -d`. Обычный `docker compose ... dow
 
 ## Запуск из исходников без Docker
 
-При доступном PostgreSQL:
+Потребуются:
+
+- .NET SDK **10.0.303**, зафиксированный в [`global.json`](global.json);
+- PostgreSQL 17;
+- два терминала для API и клиента.
+
+Задайте строку подключения в окружении терминала API:
 
 ```powershell
 $env:ConnectionStrings__Together = 'Host=localhost;Port=5432;Database=together;Username=together;Password=...'
+```
+
+Затем восстановите зависимости и инструменты и примените миграции:
+
+```powershell
+dotnet restore Together.slnx --locked-mode
 dotnet tool restore
 dotnet tool run dotnet-ef database update --project src/Together.Api
+```
+
+Запустите API:
+
+```powershell
 dotnet run --project src/Together.Api
+```
+
+В другом терминале запустите клиент:
+
+```powershell
 dotnet run --project src/Together.Client
 ```
+
+Клиент будет доступен по адресу <http://localhost:5180>, API — по адресу
+<http://localhost:5182>. Для разработки клиента с hot reload можно использовать:
+
+```powershell
+dotnet watch --project src/Together.Client
+```
+
+Node.js и npm для сборки приложения не требуются.
 
 ## Миграции и резервное копирование
 
@@ -213,8 +269,9 @@ docker compose exec -T database pg_dump -U together -d together -Fc > together.b
 
 ## Проверки
 
-Актуальные команды, результаты CI, 66 Core/UI- и 25 API-тестов и ограничение
-проверки публичного стенда приведены в [итоговом отчёте](development_report.md).
+Команды проверок приведены в [руководстве разработчика](docs/development.md#проверки).
+Результаты CI, 66 Core/UI- и 25 API-тестов и ограничение проверки публичного
+стенда приведены в [итоговом отчёте](development_report.md).
 API xUnit использует EF InMemory; PostgreSQL и миграции проверяются в CI smoke.
 Датированные проверки прежних этапов сохранены в
 [архивном backend-отчёте](docs/history/backend_documentation.md#проверки).

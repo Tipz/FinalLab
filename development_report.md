@@ -103,5 +103,41 @@ API xUnit использует EF InMemory и тестовую OAuth-схему;
 Проверки Markdown-ссылок и `git diff --check` фиксируются в
 [журнале](docs/history/README.md#документация-финального-проекта-14102026).
 
-Запуск и эксплуатация: [README](README.md), [backend](backend_documentation.md).
+Запуск и эксплуатация: [backend](backend_documentation.md),
+[руководство разработчика](docs/development.md),
+[развёртывание](docs/manual_production_deployment.md).
 Прежние задания, отчёты и датированные результаты: [архив](docs/history/README.md).
+
+## Перераспределение документации — 15.10.2026
+
+Главный README сокращён до описания продукта, возможностей, скриншота,
+краткого стека и ссылок. Команды локального запуска перенесены в backend-документацию,
+CI и настройки Яндекса — в документацию интеграций, самостоятельный deployment —
+в руководство развёртывания. Структура решения и команды проверок собраны в
+[руководстве разработчика](docs/development.md). Индекс и ссылки обновлены.
+
+Проверки выполнены на Windows с SDK `10.0.303`. Обычная Release-сборка
+не завершилась: DLL заняты уже запущенным локальным API. Процесс не останавливался;
+повторная сборка и xUnit выполнены в отдельном временном каталоге:
+
+```powershell
+$taskArtifacts = Join-Path $env:TEMP 'together-docs-verification-20261015'
+```
+
+| Фактически выполненная команда / проверка | Результат |
+| --- | --- |
+| `dotnet restore Together.slnx --locked-mode --nologo` | Успех |
+| `dotnet build Together.slnx --configuration Release --artifacts-path $taskArtifacts --nologo -p:RestoreLockedMode=true` | Успех, 0 предупреждений и ошибок |
+| `dotnet test tests/Together.Tests/Together.Tests.csproj --configuration Release --no-build --no-restore --artifacts-path $taskArtifacts --nologo` | 70/70 |
+| `dotnet test tests/Together.Api.Tests/Together.Api.Tests.csproj --configuration Release --no-build --no-restore --artifacts-path $taskArtifacts --nologo` | 25/25 |
+| `dotnet (Join-Path $taskArtifacts 'bin/Together.BrowserTests/release/Together.BrowserTests.dll') --backend-smoke` | Успех на уже запущенном локальном стенде |
+| Проверка локальных Markdown-ссылок, якорей и парности ограждений кода в восьми изменённых документах | Успех |
+| `git -c core.safecrlf=false diff --check` | Успех |
+
+Для smoke заданы `APP_URL=http://localhost:5198` и
+`BROWSER_EVIDENCE_DIR=Join-Path $taskArtifacts 'browser-evidence'`; использованы
+вымышленные данные. Этот запуск проверяет существующий локальный стенд,
+а не приложение из временного каталога сборки. Docker отсутствует в PATH:
+Compose, миграции контейнерного стенда, публикация и production deployment
+в рамках этой редакции документации не выполнялись. Публичный сайт и реальные
+интеграции Яндекса повторно не проверялись.
