@@ -1,7 +1,7 @@
 @inject IJSRuntime Js
 <dialog id="editor" aria-labelledby="editor-title" @oncancel="Cancel" @oncancel:preventDefault>
     <div class="dialog-heading"><div><div class="eyebrow">Вместе в путь</div><h2 id="editor-title">@Title</h2></div><button type="button" class="icon-button" @onclick="Cancel" disabled="@Busy" aria-label="Закрыть форму">×</button></div>
-    @ChildContent
+    <div class="editor-content">@ChildContent</div>
 </dialog>
 @code {
     [Parameter] public string Title { get; set; } = "";

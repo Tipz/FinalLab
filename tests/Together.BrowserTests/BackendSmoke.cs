@@ -88,11 +88,13 @@ public static class BackendSmoke
                     Timeout = 60_000
                 });
 
+            await CheckEmptyNavigation(browser, baseUrl, evidence);
+
             if (errors.Count > 0)
                 throw new InvalidOperationException(string.Join(Environment.NewLine, errors));
 
             await WriteResult(evidence, browser.Version, true, null);
-            Console.WriteLine("PASS backend-smoke: registration, three screens, direct links/history, independent trips, budget/reserve persistence, clarifications, failed write, real conflict, mobile/keyboard and logout");
+            Console.WriteLine("PASS backend-smoke: registration, three screens, direct links/history, independent trips, budget/reserve persistence, clarifications, failed write, real conflict, empty menu with legacy data, mobile/keyboard and logout");
             return 0;
         }
         catch (Exception ex)
@@ -109,6 +111,130 @@ public static class BackendSmoke
             Console.WriteLine($"FAIL backend-smoke: {diagnostics}");
             return 1;
         }
+    }
+
+    private static async Task CheckEmptyNavigation(IBrowser browser, string baseUrl, string evidence)
+    {
+        await using var context = await browser.NewContextAsync(new()
+        {
+            Locale = "ru-RU"
+        });
+        var page = await context.NewPageAsync();
+        await page.GotoAsync(baseUrl);
+        await Expect(page.Locator("h1")).ToHaveTextAsync("Вход", new()
+        {
+            Timeout = 60_000
+        });
+        var legacy = JsonSerializer.Serialize(Together.Core.ExampleData.Create(), Together.Core.Workspace.JsonOptions);
+        await page.EvaluateAsync("""
+            async json => {
+                const storage = await import('./js/storage.js');
+                await storage.read();
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('together-trips', 1);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = reject;
+                });
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction('workspace', 'readwrite');
+                    tx.objectStore('workspace').put(json, 'current');
+                    tx.oncomplete = resolve;
+                    tx.onerror = reject;
+                });
+                db.close();
+            }
+            """, legacy);
+        await page.GetByRole(AriaRole.Button, new()
+        {
+            Name = "Создать аккаунт",
+            Exact = true
+        }).ClickAsync();
+        await page.GetByLabel("Email").FillAsync($"empty-menu-{Guid.NewGuid():N}@example.test");
+        await page.GetByLabel("Пароль").FillAsync("fictional menu password");
+        await page.GetByRole(AriaRole.Button, new()
+        {
+            Name = "Создать аккаунт",
+            Exact = true
+        }).ClickAsync();
+        await Expect(page.Locator(".first-trip")).ToBeVisibleAsync(new()
+        {
+            Timeout = 60_000
+        });
+        foreach (var width in new[] { 360, 768, 1440 })
+        {
+            await page.SetViewportSizeAsync(width, 1000);
+            foreach (var label in new[] { "2. Варианты поездки", "3. Сравнение", "1. Мои поездки" })
+            {
+                await page.GetByRole(AriaRole.Link, new()
+                {
+                    Name = label,
+                    Exact = true
+                }).ClickAsync();
+                await Expect(page.Locator("h1")).ToHaveTextAsync(label[3..]);
+                await Expect(page.GetByRole(AriaRole.Heading, new()
+                {
+                    Name = label.StartsWith("1.", StringComparison.Ordinal) ? "Создайте первую поездку" : "Сначала создайте поездку",
+                    Exact = true
+                })).ToBeVisibleAsync();
+                await Expect(page.Locator("nav a")).ToHaveCountAsync(3);
+                await Expect(page.Locator("nav [aria-disabled]")).ToHaveCountAsync(0);
+                await Expect(page.Locator("nav [aria-current=page]")).ToHaveTextAsync(label);
+                Console.WriteLine($"PASS empty menu click: {width}px, {label}");
+            }
+        }
+        var response = await context.APIRequest.GetAsync(baseUrl.TrimEnd('/') + "/api/trips");
+        using var trips = JsonDocument.Parse(await response.TextAsync());
+        if (trips.RootElement.GetArrayLength() != 0)
+            throw new InvalidOperationException("Empty menu navigation must not upload local trips or create examples.");
+        if (await page.EvaluateAsync<string>("async () => (await import('./js/storage.js')).read()") != legacy)
+            throw new InvalidOperationException("Empty menu navigation changed legacy data.");
+        await page.GetByRole(AriaRole.Link, new()
+        {
+            Name = "3. Сравнение",
+            Exact = true
+        }).ClickAsync();
+        await Expect(page.GetByRole(AriaRole.Heading, new()
+        {
+            Name = "Сначала создайте поездку",
+            Exact = true
+        })).ToBeVisibleAsync();
+        await page.ScreenshotAsync(new()
+        {
+            Path = Path.Combine(evidence, "empty-menu-desktop.png"),
+            FullPage = true
+        });
+        await page.SetViewportSizeAsync(360, 1000);
+        await page.ScreenshotAsync(new()
+        {
+            Path = Path.Combine(evidence, "empty-menu-mobile.png"),
+            FullPage = true
+        });
+        await page.GetByRole(AriaRole.Button, new()
+        {
+            Name = "Создать поездку",
+            Exact = true
+        }).ClickAsync();
+        await page.Locator("#name").FillAsync("Вымышленная поездка из пустого сравнения");
+        await page.Locator("#start").FillAsync("2027-07-12");
+        await page.Locator("#end").FillAsync("2027-07-19");
+        await page.Locator("#child-0").FillAsync("5");
+        await page.GetByRole(AriaRole.Button, new()
+        {
+            Name = "Сохранить",
+            Exact = true
+        }).ClickAsync();
+        await Expect(page.Locator("#trip-select")).ToBeVisibleAsync();
+        await Expect(page.Locator("h1")).ToHaveTextAsync("Варианты поездки");
+        await page.GetByRole(AriaRole.Link, new()
+        {
+            Name = "3. Сравнение",
+            Exact = true
+        }).ClickAsync();
+        await Expect(page.Locator("h1")).ToHaveTextAsync("Сравнение");
+        await Expect(page.GetByText("Выберите минимум два варианта", new()
+        {
+            Exact = true
+        })).ToBeVisibleAsync();
     }
 
     private static async Task CheckScreens(IPage page, string baseUrl, string evidence)
@@ -181,6 +307,11 @@ public static class BackendSmoke
             Name = "К вариантам поездки",
             Exact = true
         }).ClickAsync();
+        // The comparison still has two selected cards while the route is changing.
+        // Wait for the variants screen before using its middle checkbox.
+        await Expect(page.Locator("h1")).ToHaveTextAsync("Варианты поездки");
+        await Expect(page.Locator(".variant-card")).ToHaveCountAsync(3);
+        await Expect(middleSelection).Not.ToBeCheckedAsync();
         await middleSelection.CheckAsync();
         await Expect(page.Locator(".feedback")).ToHaveTextAsync("Сохранено");
         await page.GetByRole(AriaRole.Link, new()

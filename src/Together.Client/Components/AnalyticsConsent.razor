@@ -7,8 +7,10 @@
         @if (Analytics.Consent == Together.Client.Analytics.AnalyticsConsentState.Unknown)
         {
             <p>Разрешить обезличенную аналитику посещений? Данные поездок и пользователя не отправляются.</p>
-            <MudButton Color="Color.Primary" Variant="MudBlazor.Variant.Filled" OnClick="Analytics.GrantAsync">Разрешить</MudButton>
-            <MudButton Variant="MudBlazor.Variant.Text" OnClick="Analytics.DenyAsync">Не разрешать</MudButton>
+            <div class="actions">
+                <MudButton Color="Color.Primary" Variant="MudBlazor.Variant.Filled" OnClick="Analytics.GrantAsync">Разрешить</MudButton>
+                <MudButton Variant="MudBlazor.Variant.Text" OnClick="Analytics.DenyAsync">Не разрешать</MudButton>
+            </div>
         }
         else if (Analytics.Consent == Together.Client.Analytics.AnalyticsConsentState.Granted)
         {

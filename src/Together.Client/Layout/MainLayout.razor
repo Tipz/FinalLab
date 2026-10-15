@@ -3,12 +3,14 @@
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
-@Body
-<Together.Client.Components.AnalyticsConsent />
+<div class="app-layout">
+    @Body
+    <Together.Client.Components.AnalyticsConsent />
+</div>
 @code {
     private readonly MudTheme theme = new()
     {
-        PaletteLight = new PaletteLight { Primary = "#2856b8", Error = "#b3261e", Background = "#f4f7fb", Surface = "#ffffff", TextPrimary = "#1f304c", TextSecondary = "#526278" },
+        PaletteLight = new PaletteLight { Primary = "#2856b8", Secondary = "#526278", Error = "#b3261e", Background = "#f4f7fb", Surface = "#ffffff", TextPrimary = "#1f304c", TextSecondary = "#526278" },
         Typography = new Typography { Default = new DefaultTypography { FontFamily = ["Segoe UI", "sans-serif"] } }
     };
 }

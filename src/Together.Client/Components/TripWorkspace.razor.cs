@@ -11,6 +11,7 @@ namespace Together.Client.Components;
 
 public partial class TripWorkspace
 {
+    [Parameter] public bool IsTripList { get; set; } = true;
     [Parameter]
     public Guid? TripId
     {
@@ -42,14 +43,13 @@ public partial class TripWorkspace
     private int comparisonKey;
     private Func<Task>? retry;
     private bool redirectingToLogin;
-    private bool IsTripList => TripId is null;
     private string ScreenTitle => IsTripList ? "Мои поездки" : IsComparison ? "Сравнение" : "Варианты поездки";
     private static string VariantsUrl(Guid id) => $"/trips/{id}/variants";
     private static string ComparisonUrl(Guid id) => $"/trips/{id}/comparison";
 
     protected override void OnParametersSet()
     {
-        currentId = TripId;
+        currentId = TripId ?? (IsTripList ? null : data.Trips.MinBy(t => t.CreatedAt)?.Id);
         error = null;
         success = null;
         retry = null;
@@ -97,7 +97,7 @@ public partial class TripWorkspace
             if (loaded.Trips.Count == 0 && !legacyAvailable && IsTripList)
                 loaded = await AddExampleData(loaded);
             data = loaded;
-            currentId = TripId;
+            currentId = TripId ?? (IsTripList ? null : data.Trips.MinBy(t => t.CreatedAt)?.Id);
         }
         catch (AuthenticationRequiredException)
         {
@@ -376,7 +376,7 @@ public partial class TripWorkspace
             success = null;
             conflict = false;
             retry = null;
-            currentId = TripId;
+            currentId = TripId ?? (IsTripList ? null : data.Trips.MinBy(t => t.CreatedAt)?.Id);
         }
         catch (AuthenticationRequiredException)
         {

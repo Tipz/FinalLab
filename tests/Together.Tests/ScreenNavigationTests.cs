@@ -105,6 +105,38 @@ public sealed class ScreenNavigationTests : BunitContext, IAsyncLifetime
         Assert.Empty(cut.FindAll(".variant-card,table,#trip-select"));
     }
 
+    [Theory]
+    [InlineData("/variants", "Варианты поездки")]
+    [InlineData("/comparison", "Сравнение")]
+    public void EmptySectionsKeepAllMenuLinksAvailable(string path, string heading)
+    {
+        workspace.Trips.Clear();
+        navigation.NavigateTo(path);
+        var cut = Render<App>();
+        cut.WaitForAssertion(() => Assert.Contains("Сначала создайте поездку", cut.Markup));
+        Assert.Equal(heading, cut.Find("h1").TextContent);
+        Assert.Equal(3, cut.FindAll("nav a").Count);
+        Assert.Empty(cut.FindAll("nav [aria-disabled]"));
+        Assert.Equal("/variants", cut.FindAll("nav a")[1].GetAttribute("href"));
+        Assert.Equal("/comparison", cut.FindAll("nav a")[2].GetAttribute("href"));
+        Assert.Single(cut.FindAll("nav [aria-current=page]"));
+        Assert.Empty(workspace.Trips);
+        cut.Find(".empty button").Click();
+        Assert.Contains("Создать поездку", cut.Find("dialog").TextContent);
+    }
+
+    [Theory]
+    [InlineData("/variants", "Варианты поездки", 3)]
+    [InlineData("/comparison", "Сравнение", 2)]
+    public void SectionWithoutTripIdOpensFirstAvailableTrip(string path, string heading, int cards)
+    {
+        navigation.NavigateTo(path);
+        var cut = Render<App>();
+        cut.WaitForAssertion(() => Assert.Equal(cards, cut.FindAll(".variant-card").Count));
+        Assert.Equal(heading, cut.Find("h1").TextContent);
+        Assert.Equal(workspace.Trips[0].Id.ToString(), cut.Find("#trip-select").GetAttribute("value"));
+    }
+
     [Fact]
     public async Task NavigationKeepsEditorDraftUntilDiscardIsConfirmed()
     {

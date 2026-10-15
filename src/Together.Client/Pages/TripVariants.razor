@@ -1,6 +1,7 @@
 @page "/trips/{TripId:guid}/variants"
-<TripWorkspace TripId="TripId" />
+@page "/variants"
+<TripWorkspace TripId="TripId" IsTripList="false" />
 
 @code {
-    [Parameter] public Guid TripId { get; set; }
+    [Parameter] public Guid? TripId { get; set; }
 }
